@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SparklesIcon } from "lucide-react";
+import { SparklesIcon, Music } from "lucide-react";
 
 export default function GenerateAudioNode({ data }: NodeProps<FlowNode>) {
   return (
@@ -25,7 +25,7 @@ export default function GenerateAudioNode({ data }: NodeProps<FlowNode>) {
       <div className="flex flex-col">
         <div className="flex items-center">
           <div className="rounded-full w-10 h-10 flex items-center justify-center bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-            <SparklesIcon size={18} />
+            <Music size={18} />
           </div>
           <div className="ml-2">
             <div className="text-base font-bold">Generate Audio</div>
@@ -69,6 +69,8 @@ export default function GenerateAudioNode({ data }: NodeProps<FlowNode>) {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Output rendering removed - now displayed in results tab */}
         </div>
       </div>
       <Handle

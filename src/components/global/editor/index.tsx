@@ -1,14 +1,12 @@
 "use client";
 
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import {
   addEdge,
   Background,
   Connection,
   Controls,
-  Edge,
   MiniMap,
-  Node,
   Panel,
   ReactFlow,
   useEdgesState,
@@ -18,26 +16,50 @@ import {
 import { NodeData, FlowNode } from "@/types/nodes";
 import { v4 as uuidv4 } from "uuid";
 import SidePanel from "./side-panel";
+import ResultsView from "./results-view";
 import { nodeConfigs, nodeTypes } from "@/types/nodeTypes";
 import { Button } from "@/components/ui/button";
-import { Loader2, PanelLeftIcon, PanelRightIcon } from "lucide-react";
+import {
+  Loader2,
+  PanelLeftIcon,
+  PanelRightIcon,
+  Layers,
+  BarChart,
+} from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  executeWorkflow,
+  passDataBetweenNodes,
+} from "@/services/workflow-service";
+import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEditorStore } from "@/store/editorStore";
 import "@xyflow/react/dist/style.css";
 
 const Editor = () => {
-  // Use our FlowNode type for better type safety
-  const initialNodes: FlowNode[] = [];
-  const initialEdges: Edge[] = [];
+  // Get state from Zustand store
+  const {
+    viewMode,
+    setViewMode,
+    sidePanelOpen,
+    setSidePanelOpen,
+    toggleSidePanel,
+    isRunning,
+    setIsRunning,
+    setLastExecutionTime,
+  } = useEditorStore();
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const [isRunning, setIsRunning] = useState(false);
+  // Use React Flow's state management for the flow data
+  // We'll sync this with our Zustand store
+  const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
   const isMobile = useIsMobile();
-  const [sidePanelOpen, setSidePanelOpen] = useState(!isMobile);
 
-  const toggleSidePanel = () => {
-    setSidePanelOpen(!sidePanelOpen);
-  };
+  // Initialize sidebar state based on mobile detection
+  useEffect(() => {
+    setSidePanelOpen(!isMobile);
+  }, [isMobile, setSidePanelOpen]);
 
   // Function to find a position that doesn't overlap with existing nodes
   const findNonOverlappingPosition = (
@@ -165,79 +187,171 @@ const Editor = () => {
     [setEdges]
   );
 
-  const handleRunWorkflow = () => {
+  // Update Zustand store when local nodes/edges change
+  useEffect(() => {
+    // This synchronizes the ReactFlow internal state with our Zustand store
+    useEditorStore.setState({ nodes, edges });
+  }, [nodes, edges]);
+
+  const handleRunWorkflow = async () => {
     setIsRunning(true);
-    // Workflow execution logic will go here
-    setTimeout(() => {
+    const startTime = performance.now();
+
+    try {
+      // First, pass data between connected nodes
+      const nodesWithPassedData = passDataBetweenNodes(nodes, edges);
+      setNodes(nodesWithPassedData);
+
+      // Execute the workflow and get updated nodes with results
+      const updatedNodes = await executeWorkflow(nodesWithPassedData, edges);
+
+      // Update the nodes in the UI with results
+      setNodes(updatedNodes);
+
+      // Calculate execution time
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      setLastExecutionTime(executionTime);
+
+      // Auto-switch to results view
+      setViewMode("results");
+
+      // Close sidebar when showing results
+      if (sidePanelOpen) {
+        setSidePanelOpen(false);
+      }
+
+      // Display a completion toast
+      toast.success("Workflow execution completed", {
+        description: `Processed in ${(executionTime / 1000).toFixed(
+          2
+        )} seconds`,
+      });
+    } catch (error) {
+      console.error("Workflow execution failed:", error);
+      toast.error("Workflow execution failed", {
+        description:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      });
+    } finally {
       setIsRunning(false);
-    }, 2000);
+    }
+  };
+
+  const handleTabChange = (value: string) => {
+    setViewMode(value as "canvas" | "results");
+
+    // When switching to results view, close the sidebar automatically
+    if (value === "results" && sidePanelOpen) {
+      setSidePanelOpen(false);
+    }
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden">
-      <div className="flex-1 relative" onDragOver={onDragOver} onDrop={onDrop}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onConnect={onConnect}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          nodeTypes={nodeTypes}
-          fitView
-          proOptions={{ hideAttribution: true }}
+    <div className="flex flex-col h-screen w-full overflow-hidden">
+      {/* Tabs at the top */}
+      <div className="p-4 border-b bg-background flex items-center">
+        <Tabs
+          value={viewMode}
+          onValueChange={handleTabChange}
+          className="flex-1"
         >
-          <Controls
-            className="bg-background border border-border rounded-md shadow-sm"
-            showInteractive={!isMobile}
-          />
-          {!isMobile && (
-            <MiniMap
-              className="bg-background border border-border rounded-md shadow-sm"
-              nodeColor="var(--color-primary)"
-              maskColor="rgba(0, 0, 0, 0.1)"
-            />
-          )}
-          <Background
-            // @ts-ignore
-            variant="dots"
-            gap={12}
-            size={1}
-            color="var(--color-muted-foreground)"
-          />
-          <Panel position="top-right">
-            <Button
-              className="shadow-md"
-              size="sm"
-              variant="default"
-              onClick={handleRunWorkflow}
-              disabled={isRunning || nodes.length === 0}
-            >
-              {isRunning ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Running...
-                </>
-              ) : (
-                "Run Workflow"
-              )}
-            </Button>
-          </Panel>
-        </ReactFlow>
+          <TabsList>
+            <TabsTrigger value="canvas" className="flex items-center gap-1.5">
+              <Layers className="h-4 w-4" />
+              Canvas
+            </TabsTrigger>
+            <TabsTrigger value="results" className="flex items-center gap-1.5">
+              <BarChart className="h-4 w-4" />
+              Results
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         <Button
-          variant="secondary"
-          size="icon"
-          className="absolute top-4 left-4 z-10 shadow-md"
-          onClick={toggleSidePanel}
+          className="shadow-sm ml-auto"
+          size="sm"
+          variant="default"
+          onClick={handleRunWorkflow}
+          disabled={isRunning || nodes.length === 0}
         >
-          {sidePanelOpen ? <PanelLeftIcon /> : <PanelRightIcon />}
+          {isRunning ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Running...
+            </>
+          ) : (
+            "Run Workflow"
+          )}
         </Button>
       </div>
-      {sidePanelOpen && (
-        <SidePanel
-          nodeConfigs={nodeConfigs}
-          onClose={isMobile ? toggleSidePanel : undefined}
-        />
-      )}
+
+      {/* Content area */}
+      <div className="flex flex-1 relative overflow-hidden">
+        {viewMode === "canvas" ? (
+          <>
+            {/* Canvas View */}
+            <div
+              className="flex-1 relative"
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+            >
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onConnect={onConnect}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                nodeTypes={nodeTypes}
+                fitView
+                proOptions={{ hideAttribution: true }}
+              >
+                <Controls
+                  className="bg-background border border-border rounded-md shadow-sm"
+                  showInteractive={!isMobile}
+                />
+                {!isMobile && (
+                  <MiniMap
+                    className="bg-background border border-border rounded-md shadow-sm"
+                    nodeColor="var(--color-primary)"
+                    maskColor="rgba(0, 0, 0, 0.1)"
+                    pannable
+                    zoomable
+                  />
+                )}
+                <Background
+                  // @ts-ignore
+                  variant="dots"
+                  gap={12}
+                  size={1}
+                  color="var(--color-muted-foreground)"
+                />
+              </ReactFlow>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="absolute top-4 left-4 z-10 shadow-md"
+                onClick={toggleSidePanel}
+              >
+                {sidePanelOpen ? <PanelLeftIcon /> : <PanelRightIcon />}
+              </Button>
+            </div>
+
+            {/* Side Panel */}
+            {sidePanelOpen && (
+              <SidePanel
+                nodeConfigs={nodeConfigs}
+                onClose={isMobile ? toggleSidePanel : undefined}
+              />
+            )}
+          </>
+        ) : (
+          // Results View
+          <div className="flex-1 p-4 overflow-auto">
+            <ResultsView />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

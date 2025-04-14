@@ -3,7 +3,6 @@
 import React from "react";
 import { Handle, Position, NodeProps } from "@xyflow/react";
 import { FlowNode, NodeData, TaskType } from "@/types/nodes";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -17,21 +16,21 @@ import { ImageIcon } from "lucide-react";
 
 export default function GenerateImageNode({ data }: NodeProps<FlowNode>) {
   return (
-    <div className="px-4 py-3 shadow-md rounded-md bg-white border-2 border-blue-200 dark:bg-slate-900 dark:border-blue-800 min-w-[240px]">
+    <div className="px-4 py-3 shadow-md rounded-md bg-white border-2 border-green-200 dark:bg-slate-900 dark:border-green-800 min-w-[240px]">
       <Handle
         type="target"
         position={Position.Top}
-        className="!bg-blue-500 !w-3 !h-3"
+        className="!bg-green-500 !w-3 !h-3"
       />
       <div className="flex flex-col">
         <div className="flex items-center">
-          <div className="rounded-full w-10 h-10 flex items-center justify-center bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+          <div className="rounded-full w-10 h-10 flex items-center justify-center bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
             <ImageIcon size={18} />
           </div>
           <div className="ml-2">
             <div className="text-base font-bold">Generate Image</div>
             <div className="text-xs text-muted-foreground">
-              Create AI-generated images
+              AI image generation
             </div>
           </div>
         </div>
@@ -39,7 +38,7 @@ export default function GenerateImageNode({ data }: NodeProps<FlowNode>) {
         <div className="mt-3 space-y-3">
           <div className="space-y-1">
             <Label htmlFor="image-prompt" className="text-xs">
-              Image Prompt
+              Prompt
             </Label>
             <Textarea
               id="image-prompt"
@@ -54,7 +53,7 @@ export default function GenerateImageNode({ data }: NodeProps<FlowNode>) {
 
           <div className="space-y-1">
             <Label htmlFor="image-size" className="text-xs">
-              Image Size
+              Size
             </Label>
             <Select
               defaultValue={data.inputs.size || "512x512"}
@@ -72,12 +71,14 @@ export default function GenerateImageNode({ data }: NodeProps<FlowNode>) {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Output rendering removed - now displayed in results tab */}
         </div>
       </div>
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!bg-blue-500 !w-3 !h-3"
+        className="!bg-green-500 !w-3 !h-3"
       />
     </div>
   );
