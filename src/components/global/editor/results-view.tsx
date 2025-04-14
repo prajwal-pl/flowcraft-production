@@ -125,7 +125,6 @@ export default function ResultsView() {
 
     switch (taskType) {
       case TaskType.GENERATE_TEXT:
-      case TaskType.SUMMARIZE_PDF:
       case TaskType.TRANSCRIBE_AUDIO:
         return (
           <div className="p-4 bg-muted/30 rounded-md max-h-[500px] overflow-auto border border-border/50 shadow-sm prose prose-sm dark:prose-invert">
@@ -134,6 +133,32 @@ export default function ResultsView() {
             ) : (
               "No text output available"
             )}
+          </div>
+        );
+      case TaskType.SUMMARIZE_PDF:
+        return (
+          <div className="space-y-4">
+            {/* Display the filename if available */}
+            {node.data.inputs?.file && (
+              <div className="flex items-center space-x-2 text-sm">
+                <FileText className="h-4 w-4 text-amber-500" />
+                <span className="font-medium">
+                  Source:{" "}
+                  {typeof node.data.inputs.file === "string"
+                    ? node.data.inputs.file.split("/").pop()
+                    : node.data.inputs.file instanceof File
+                    ? node.data.inputs.file.name
+                    : "Unknown file"}
+                </span>
+              </div>
+            )}
+            <div className="p-4 bg-amber-50/30 dark:bg-amber-950/20 rounded-md max-h-[500px] overflow-auto border border-amber-200/50 dark:border-amber-900/50 shadow-sm prose prose-sm dark:prose-invert">
+              {outputs.summary ? (
+                <ReactMarkdown>{outputs.summary}</ReactMarkdown>
+              ) : (
+                "No summary available"
+              )}
+            </div>
           </div>
         );
       case TaskType.READ_IMAGE:

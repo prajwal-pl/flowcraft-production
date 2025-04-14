@@ -14,8 +14,7 @@ if (hasGroqApiKey) {
 }
 
 /**
- * Simulates text-to-speech functionality
- * In a real implementation, we would use an actual TTS service
+ * Generates audio from text using Groq's text-to-speech service
  */
 export async function generateAudio(
   text: string,
@@ -25,18 +24,52 @@ export async function generateAudio(
     // Show pending toast
     const toastId = toast.loading("Generating audio...");
 
-    // Simulate processing time
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    let audioUrl = "";
 
-    // In a real implementation, this would be the URL to the generated audio file
-    // For now, we'll create a placeholder that could later be replaced with actual audio
-    const audioUrl = `data:audio/mp3;base64,PLACEHOLDER_AUDIO_DATA`;
+    // Map voice selection to appropriate Groq voice
+    let groqVoice = "Fritz-PlayAI"; // Default voice
+    if (voice === "en-US") groqVoice = "Fritz-PlayAI";
+    else if (voice === "en") groqVoice = "Arista-PlayAI";
+    else if (voice === "fr-FR") groqVoice = "Jennifer-PlayAI";
 
-    // Show success toast
-    toast.success("Audio generation complete (Simulation)", {
-      id: toastId,
-      description: `Generated audio with ${voice} voice is now available.`,
-    });
+    if (hasGroqApiKey && groq) {
+      // Use Groq for text-to-speech
+      const response = await groq.audio.speech.create({
+        model: "playai-tts",
+        voice: groqVoice,
+        input: text,
+        response_format: "wav",
+      });
+
+      // Convert the response to a base64 encoded data URL
+      const arrayBuffer = await response.arrayBuffer();
+      const base64 = btoa(
+        new Uint8Array(arrayBuffer).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          ""
+        )
+      );
+
+      audioUrl = `data:audio/wav;base64,${base64}`;
+
+      // Show success toast
+      toast.success("Audio generation complete", {
+        id: toastId,
+        description: `Generated audio with ${voice} voice is now available.`,
+      });
+    } else {
+      // Simulate processing time when no API key is available
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Create a placeholder when no API keys are available
+      audioUrl = `data:audio/mp3;base64,PLACEHOLDER_AUDIO_DATA`;
+
+      // Show simulation toast
+      toast.success("Audio generation complete (Simulation)", {
+        id: toastId,
+        description: `Generated audio with ${voice} voice is now available.`,
+      });
+    }
 
     return audioUrl;
   } catch (error) {

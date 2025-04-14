@@ -1,14 +1,50 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Handle, Position, NodeProps } from "@xyflow/react";
 import { NodeData, TaskType, FlowNode } from "@/types/nodes";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { FileTextIcon } from "lucide-react";
+import { FileTextIcon, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function SummarizePDFNode({ data }: NodeProps<FlowNode>) {
-  const hasFile = data.inputs && data.inputs.file;
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  
+  // Initialize file state from data on component mount
+  useEffect(() => {
+    if (data.inputs?.file) {
+      if (typeof data.inputs.file === 'string') {
+        // If it's a string (URL or path), extract filename
+        const parts = data.inputs.file.split('/');
+        setFileName(parts[parts.length - 1]);
+      } else if (data.inputs.file instanceof File) {
+        // If it's a File object
+        setFileName(data.inputs.file.name);
+      }
+    }
+  }, [data.inputs?.file]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    setFileError(null);
+    
+    if (selectedFile) {
+      // Validate file type
+      if (!selectedFile.name.toLowerCase().endsWith('.pdf')) {
+        setFileError("Please select a PDF file.");
+        return;
+      }
+      
+      // Set file in node data
+      data.inputs.file = selectedFile;
+      setFileName(selectedFile.name);
+    } else {
+      data.inputs.file = null;
+      setFileName(null);
+    }
+  };
 
   return (
     <div className="px-4 py-3 shadow-md rounded-md bg-white border-2 border-amber-200 dark:bg-slate-900 dark:border-amber-800 min-w-[240px]">
@@ -41,18 +77,21 @@ export default function SummarizePDFNode({ data }: NodeProps<FlowNode>) {
                 type="file"
                 accept=".pdf"
                 className="w-full h-8 text-xs"
-                onChange={(e) => {
-                  data.inputs.file = e.target.files?.[0] || null;
-                }}
+                onChange={handleFileChange}
               />
             </div>
-            {hasFile && (
+            {fileError && (
+              <Alert variant="destructive" className="py-2 mt-1">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-xs ml-2">
+                  {fileError}
+                </AlertDescription>
+              </Alert>
+            )}
+            {fileName && !fileError && (
               <div className="mt-1">
                 <span className="text-xs text-green-600 dark:text-green-400">
-                  File selected:{" "}
-                  {typeof data.inputs.file === "string"
-                    ? data.inputs.file
-                    : data.inputs.file?.name || "Unknown"}
+                  File selected: {fileName}
                 </span>
               </div>
             )}
@@ -68,12 +107,27 @@ export default function SummarizePDFNode({ data }: NodeProps<FlowNode>) {
               className="w-full h-8 text-xs"
               defaultValue={data.inputs.maxLength || 500}
               onChange={(e) => {
-                data.inputs.maxLength = parseInt(e.target.value);
+                const value = parseInt(e.target.value);
+                if (!isNaN(value) && value > 0) {
+                  data.inputs.maxLength = value;
+                }
               }}
+              min="50"
+              max="2000"
             />
           </div>
 
-          {/* Output rendering removed - now displayed in results tab */}
+          {/* If we have a summary output, show a preview indicator */}
+          {data.outputs?.summary && (
+            <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/30 rounded text-xs border border-amber-200 dark:border-amber-800">
+              <p className="font-medium text-amber-800 dark:text-amber-300">Summary Generated</p>
+              <p className="text-amber-700 dark:text-amber-400 truncate">
+                {typeof data.outputs.summary === 'string' 
+                  ? `${data.outputs.summary.substring(0, 30)}...` 
+                  : 'Summary available in results view'}
+              </p>
+            </div>
+          )}
         </div>
       </div>
       <Handle

@@ -96,7 +96,7 @@ export default function ReadImageNode({ data }: NodeProps<FlowNode>) {
               </div>
             )}
           </div>
-          
+
           {/* Image preview and text output have been removed - they're now displayed in results tab */}
         </div>
       </div>

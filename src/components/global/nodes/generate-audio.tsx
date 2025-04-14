@@ -63,9 +63,9 @@ export default function GenerateAudioNode({ data }: NodeProps<FlowNode>) {
                 <SelectValue placeholder="Select voice" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="en-US">English (US)</SelectItem>
-                <SelectItem value="es-ES">Spanish</SelectItem>
-                <SelectItem value="fr-FR">French</SelectItem>
+                <SelectItem value="en-US">Fritz</SelectItem>
+                <SelectItem value="es-ES">Angelo</SelectItem>
+                <SelectItem value="fr-FR">Jennifer</SelectItem>
               </SelectContent>
             </Select>
           </div>
