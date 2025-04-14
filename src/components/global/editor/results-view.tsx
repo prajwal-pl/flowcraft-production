@@ -37,6 +37,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import ReactMarkdown from "react-markdown";
 
 export default function ResultsView() {
   const { nodes, lastExecutionTime } = useEditorStore();
@@ -127,8 +128,12 @@ export default function ResultsView() {
       case TaskType.SUMMARIZE_PDF:
       case TaskType.TRANSCRIBE_AUDIO:
         return (
-          <div className="p-4 bg-muted/30 rounded-md whitespace-pre-wrap max-h-[500px] overflow-auto border border-border/50 shadow-sm">
-            {outputs.text || "No text output available"}
+          <div className="p-4 bg-muted/30 rounded-md max-h-[500px] overflow-auto border border-border/50 shadow-sm prose prose-sm dark:prose-invert">
+            {outputs.text ? (
+              <ReactMarkdown>{outputs.text}</ReactMarkdown>
+            ) : (
+              "No text output available"
+            )}
           </div>
         );
       case TaskType.READ_IMAGE:
@@ -148,8 +153,12 @@ export default function ResultsView() {
             )}
             <div>
               <h4 className="text-sm font-medium mb-2">Extracted Text</h4>
-              <div className="p-4 bg-muted/30 rounded-md whitespace-pre-wrap max-h-[500px] overflow-auto border border-border/50 shadow-sm">
-                {outputs.text || "No text output available"}
+              <div className="p-4 bg-muted/30 rounded-md max-h-[500px] overflow-auto border border-border/50 shadow-sm prose prose-sm dark:prose-invert">
+                {outputs.text ? (
+                  <ReactMarkdown>{outputs.text}</ReactMarkdown>
+                ) : (
+                  "No text output available"
+                )}
               </div>
             </div>
           </div>

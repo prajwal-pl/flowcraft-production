@@ -10,8 +10,6 @@ import { ScanEyeIcon } from "lucide-react";
 export default function ReadImageNode({ data }: NodeProps<FlowNode>) {
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const hasFile = data.inputs && data.inputs.file;
-  const hasOutput =
-    data.outputs && (data.outputs.text || data.outputs.imageUrl);
 
   // Handle file selection and convert to base64
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,11 +43,13 @@ export default function ReadImageNode({ data }: NodeProps<FlowNode>) {
     };
   }, [previewUrl]);
 
-  // Get image URL from either preview or the processed output
-  const imageUrl =
-    data.outputs?.imageUrl ||
-    previewUrl ||
-    (typeof data.inputs.file === "string" ? data.inputs.file : "");
+  // Set image URL in outputs for the results view
+  useEffect(() => {
+    if (previewUrl) {
+      data.outputs = data.outputs || {};
+      data.outputs.imageUrl = previewUrl;
+    }
+  }, [previewUrl, data]);
 
   return (
     <div className="px-4 py-3 shadow-md rounded-md bg-white border-2 border-teal-200 dark:bg-slate-900 dark:border-teal-800 min-w-[240px]">
@@ -96,34 +96,8 @@ export default function ReadImageNode({ data }: NodeProps<FlowNode>) {
               </div>
             )}
           </div>
-
-          {/* Show image preview */}
-          {imageUrl && (
-            <div className="mt-2">
-              <Label className="text-xs mb-1 block">Image Preview</Label>
-              <div className="border rounded-md overflow-hidden w-full max-h-32 flex items-center justify-center">
-                <img
-                  src={imageUrl}
-                  alt="Preview"
-                  className="max-w-full max-h-32 object-contain"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Display extracted text preview (truncated) */}
-          {hasOutput && data.outputs.text && (
-            <div className="mt-2">
-              <Label className="text-xs mb-1 block">
-                Extracted Text Preview
-              </Label>
-              <div className="text-xs border rounded-md p-2 max-h-24 overflow-auto bg-muted">
-                {data.outputs.text.length > 150
-                  ? `${data.outputs.text.substring(0, 150)}...`
-                  : data.outputs.text}
-              </div>
-            </div>
-          )}
+          
+          {/* Image preview and text output have been removed - they're now displayed in results tab */}
         </div>
       </div>
       <Handle
