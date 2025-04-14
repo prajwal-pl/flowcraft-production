@@ -13,18 +13,34 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SidePanelProps {
   nodeConfigs: NodeConfig[];
+  onClose?: () => void;
 }
 
-export default function SidePanel({ nodeConfigs }: SidePanelProps) {
+export default function SidePanel({ nodeConfigs, onClose }: SidePanelProps) {
+  const isMobile = useIsMobile();
+
   const onDragStart = (event: React.DragEvent, nodeConfig: NodeConfig) => {
     event.dataTransfer.setData(
       "application/reactflow",
       JSON.stringify(nodeConfig)
     );
     event.dataTransfer.effectAllowed = "move";
+  };
+
+  // For mobile: handle touch-based node creation
+  const handleTouchNodeAdd = (nodeConfig: NodeConfig) => {
+    if (!isMobile || !onClose) return;
+
+    // Store the node config in localStorage for the editor to pick up
+    localStorage.setItem("pendingNodeAdd", JSON.stringify(nodeConfig));
+    // Close the panel
+    onClose();
   };
 
   // Group node configs by category
@@ -39,15 +55,37 @@ export default function SidePanel({ nodeConfigs }: SidePanelProps) {
   };
 
   return (
-    <Card className="w-80 h-full border-l rounded-none shadow-none">
-      <CardHeader className="px-6 py-4">
-        <CardTitle className="text-xl font-semibold">Task Library</CardTitle>
-        <CardDescription>
-          Drag and drop tasks onto the canvas to build your workflow
-        </CardDescription>
+    <Card
+      className={cn(
+        "h-full border-l rounded-none shadow-none",
+        isMobile ? "w-full fixed top-0 left-0 right-0 z-50" : "w-80"
+      )}
+    >
+      <CardHeader className="px-6 py-4 flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-xl font-semibold">Task Library</CardTitle>
+          <CardDescription>
+            Drag and drop tasks onto the canvas to build your workflow
+          </CardDescription>
+        </div>
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="ml-auto"
+          >
+            <X className="h-5 w-5" />
+            <span className="sr-only">Close</span>
+          </Button>
+        )}
       </CardHeader>
       <Separator />
-      <ScrollArea className="h-[calc(100vh-130px)]">
+      <ScrollArea
+        className={cn(
+          isMobile ? "h-[calc(100vh-130px)]" : "h-[calc(100vh-130px)]"
+        )}
+      >
         <CardContent className="p-4">
           {Object.keys(categories).map((category) => (
             <div key={category} className="mb-6">
@@ -63,14 +101,16 @@ export default function SidePanel({ nodeConfigs }: SidePanelProps) {
                     <div
                       key={nodeConfig.type}
                       className={cn(
-                        "p-3 rounded-md cursor-grab transition-all",
+                        "p-3 rounded-md transition-all",
                         "hover:shadow-md active:shadow-sm border",
                         isGeneration
                           ? "bg-blue-50/50 hover:bg-blue-50"
                           : "bg-amber-50/50 hover:bg-amber-50",
-                        "dark:bg-slate-800 dark:hover:bg-slate-700"
+                        "dark:bg-slate-800 dark:hover:bg-slate-700",
+                        isMobile ? "cursor-pointer" : "cursor-grab"
                       )}
                       onDragStart={(e) => onDragStart(e, nodeConfig)}
+                      onClick={() => handleTouchNodeAdd(nodeConfig)}
                       draggable
                     >
                       <div className="flex items-center justify-between">

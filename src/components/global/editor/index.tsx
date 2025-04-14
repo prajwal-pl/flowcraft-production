@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   addEdge,
   Background,
@@ -20,7 +20,8 @@ import { v4 as uuidv4 } from "uuid";
 import SidePanel from "./side-panel";
 import { nodeConfigs, nodeTypes } from "@/types/nodeTypes";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, PanelLeftIcon, PanelRightIcon } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import "@xyflow/react/dist/style.css";
 
 const Editor = () => {
@@ -31,6 +32,86 @@ const Editor = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [isRunning, setIsRunning] = useState(false);
+  const isMobile = useIsMobile();
+  const [sidePanelOpen, setSidePanelOpen] = useState(!isMobile);
+
+  const toggleSidePanel = () => {
+    setSidePanelOpen(!sidePanelOpen);
+  };
+
+  // Function to find a position that doesn't overlap with existing nodes
+  const findNonOverlappingPosition = (
+    position: XYPosition,
+    nodeSize = { width: 200, height: 150 },
+    spacingOffset = 30
+  ) => {
+    let newPosition = { ...position };
+    let overlappingNode = true;
+    let safetyCounter = 0; // Prevent infinite loops
+    const maxAttempts = 100;
+
+    while (overlappingNode && safetyCounter < maxAttempts) {
+      overlappingNode = nodes.some((node) => {
+        const dx = Math.abs(node.position.x - newPosition.x);
+        const dy = Math.abs(node.position.y - newPosition.y);
+        return dx < nodeSize.width && dy < nodeSize.height;
+      });
+
+      if (overlappingNode) {
+        // Apply diagonal offset to try to find a free space
+        newPosition.x += spacingOffset;
+        newPosition.y += spacingOffset;
+      }
+
+      safetyCounter++;
+    }
+
+    return newPosition;
+  };
+
+  // Check for pendingNodeAdd from localStorage (mobile touch support)
+  useEffect(() => {
+    const pendingNodeAdd = localStorage.getItem("pendingNodeAdd");
+    if (pendingNodeAdd) {
+      try {
+        const nodeConfig = JSON.parse(pendingNodeAdd);
+
+        // Create a position for the new node - center of the viewport
+        // For a real implementation, you'd want to use ReactFlow's viewport utilities
+        const position: XYPosition = {
+          x: window.innerWidth / 2 - 100,
+          y: window.innerHeight / 2 - 100,
+        };
+
+        // Create new node with initialized empty inputs and outputs
+        const newNode: FlowNode = {
+          id: `${nodeConfig.type}-${uuidv4()}`,
+          type: nodeConfig.type,
+          position: findNonOverlappingPosition(position),
+          data: {
+            label: nodeConfig.label,
+            taskType: nodeConfig.taskType,
+            inputs: nodeConfig.inputs.reduce(
+              (acc: Record<string, any>, input: any) => {
+                acc[input.name] =
+                  input.default !== undefined ? input.default : null;
+                return acc;
+              },
+              {}
+            ),
+            outputs: {},
+          },
+        };
+
+        setNodes((nds) => nds.concat(newNode));
+        // Clear the pending node
+        localStorage.removeItem("pendingNodeAdd");
+      } catch (e) {
+        console.error("Error adding pending node", e);
+        localStorage.removeItem("pendingNodeAdd");
+      }
+    }
+  }, [setNodes, sidePanelOpen]);
 
   const onDragOver = (event: React.DragEvent) => {
     event.preventDefault();
@@ -58,7 +139,7 @@ const Editor = () => {
       const newNode: FlowNode = {
         id: `${nodeConfig.type}-${uuidv4()}`,
         type: nodeConfig.type,
-        position,
+        position: findNonOverlappingPosition(position),
         data: {
           label: nodeConfig.label,
           taskType: nodeConfig.taskType,
@@ -93,7 +174,7 @@ const Editor = () => {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen w-full overflow-hidden">
       <div className="flex-1 relative" onDragOver={onDragOver} onDrop={onDrop}>
         <ReactFlow
           nodes={nodes}
@@ -105,12 +186,17 @@ const Editor = () => {
           fitView
           proOptions={{ hideAttribution: true }}
         >
-          <Controls className="bg-background border border-border rounded-md shadow-sm" />
-          <MiniMap
+          <Controls
             className="bg-background border border-border rounded-md shadow-sm"
-            nodeColor="var(--color-primary)"
-            maskColor="rgba(0, 0, 0, 0.1)"
+            showInteractive={!isMobile}
           />
+          {!isMobile && (
+            <MiniMap
+              className="bg-background border border-border rounded-md shadow-sm"
+              nodeColor="var(--color-primary)"
+              maskColor="rgba(0, 0, 0, 0.1)"
+            />
+          )}
           <Background
             // @ts-ignore
             variant="dots"
@@ -137,8 +223,21 @@ const Editor = () => {
             </Button>
           </Panel>
         </ReactFlow>
+        <Button
+          variant="secondary"
+          size="icon"
+          className="absolute top-4 left-4 z-10 shadow-md"
+          onClick={toggleSidePanel}
+        >
+          {sidePanelOpen ? <PanelLeftIcon /> : <PanelRightIcon />}
+        </Button>
       </div>
-      <SidePanel nodeConfigs={nodeConfigs} />
+      {sidePanelOpen && (
+        <SidePanel
+          nodeConfigs={nodeConfigs}
+          onClose={isMobile ? toggleSidePanel : undefined}
+        />
+      )}
     </div>
   );
 };
