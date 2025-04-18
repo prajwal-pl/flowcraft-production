@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useEditorStore } from "@/store/editorStore";
 import {
   Card,
@@ -25,6 +25,8 @@ import {
   ArrowRight,
   Cpu,
   Code,
+  Play,
+  Pause,
 } from "lucide-react";
 import { TaskType } from "@/types/nodes";
 import { Progress } from "@/components/ui/progress";
@@ -38,6 +40,116 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import ReactMarkdown from "react-markdown";
+
+// Custom audio player component
+function AudioPlayer({ src }: { src: string }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    // Event listeners
+    const setAudioData = () => {
+      setDuration(audio.duration);
+      setCurrentTime(audio.currentTime);
+    };
+
+    const setAudioTime = () => {
+      const currentTime = audio.currentTime;
+      setCurrentTime(currentTime);
+
+      // Update progress bar width based on current time
+      if (progressBarRef.current) {
+        const progressPercent = (currentTime / audio.duration) * 100;
+        progressBarRef.current.style.width = `${progressPercent}%`;
+      }
+    };
+
+    // Add event listeners
+    audio.addEventListener("loadeddata", setAudioData);
+    audio.addEventListener("timeupdate", setAudioTime);
+    audio.addEventListener("play", () => setIsPlaying(true));
+    audio.addEventListener("pause", () => setIsPlaying(false));
+    audio.addEventListener("ended", () => setIsPlaying(false));
+
+    return () => {
+      // Cleanup event listeners
+      audio.removeEventListener("loadeddata", setAudioData);
+      audio.removeEventListener("timeupdate", setAudioTime);
+      audio.removeEventListener("play", () => setIsPlaying(true));
+      audio.removeEventListener("pause", () => setIsPlaying(false));
+      audio.removeEventListener("ended", () => setIsPlaying(false));
+    };
+  }, []);
+
+  // Format time in MM:SS format
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
+  };
+
+  // Handle click on progress bar to seek
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!audioRef.current) return;
+
+    const progressBar = e.currentTarget;
+    const pos =
+      (e.pageX - progressBar.getBoundingClientRect().left) /
+      progressBar.offsetWidth;
+    audioRef.current.currentTime = pos * audioRef.current.duration;
+  };
+
+  // Toggle play/pause
+  const togglePlayPause = () => {
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+  };
+
+  return (
+    <div className="flex flex-col space-y-2">
+      <audio ref={audioRef} src={src} preload="metadata" />
+
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={togglePlayPause}
+          className="p-2 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground flex justify-center items-center"
+        >
+          {isPlaying ? <Pause size={15} /> : <Play size={15} />}
+        </button>
+
+        <div className="text-xs w-16 text-muted-foreground">
+          {formatTime(currentTime)}
+        </div>
+
+        <div
+          className="h-1.5 bg-muted flex-1 rounded-full overflow-hidden cursor-pointer"
+          onClick={handleProgressClick}
+        >
+          <div
+            ref={progressBarRef}
+            className="h-full bg-primary"
+            style={{ width: `${(currentTime / duration) * 100}%` }}
+          />
+        </div>
+
+        <div className="text-xs w-16 text-right text-muted-foreground">
+          {Number.isNaN(duration) ? "0:00" : formatTime(duration)}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ResultsView() {
   const { nodes, lastExecutionTime } = useEditorStore();
@@ -205,7 +317,7 @@ export default function ResultsView() {
       case TaskType.GENERATE_AUDIO:
         return outputs.audio ? (
           <div className="mt-2 p-3 bg-muted/20 rounded-md border border-border/50 shadow-sm">
-            <audio src={outputs.audio} controls className="w-full" />
+            <AudioPlayer src={outputs.audio} />
           </div>
         ) : (
           <div className="p-4 bg-muted/30 rounded-md border border-border/50">

@@ -13,3 +13,63 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// User model (linked with Clerk authentication)
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique // External ID from Clerk
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workflows Workflow[] // User can have multiple workflows
+
+  @@index([clerkId])
+  @@map("users")
+}
+
+// Workflow model
+model Workflow {
+  id           String    @id @default(cuid())
+  name         String
+  description  String?
+  isPublic     Boolean   @default(false) // Whether this workflow can be viewed publicly
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastExecuted DateTime?
+
+  // Stores the full workflow definition in a performant way
+  // Using JSON to store the entire workflow structure efficiently
+  nodes Json // Stores all nodes in the workflow
+  edges Json // Stores all connections between nodes
+
+  userId     String // Creator of the workflow
+  user       User                @relation(fields: [userId], references: [id])
+  executions WorkflowExecution[]
+
+  @@index([userId])
+  @@map("workflows")
+}
+
+// WorkflowExecution tracks each time a workflow is run
+model WorkflowExecution {
+  id            String    @id @default(cuid())
+  status        String // "completed", "failed", "running"
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  executionTime Float? // in milliseconds
+  error         String?
+
+  // Store execution results efficiently
+  results Json? // Stores the execution results
+
+  // Relations
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+  @@map("workflow_executions")
+}

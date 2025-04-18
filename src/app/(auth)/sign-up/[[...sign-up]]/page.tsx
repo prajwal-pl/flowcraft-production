@@ -175,7 +175,7 @@ export default function SignUpPage() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="flex flex-col space-y-4 pb-6">
+              <CardFooter className="flex flex-col mt-3 space-y-4 pb-6">
                 <Button
                   type="submit"
                   className="w-full py-6 text-base font-medium transition-all hover:shadow-md bg-zinc-700 hover:bg-zinc-600 text-white"

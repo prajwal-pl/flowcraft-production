@@ -1,4 +1,4 @@
-import { NodeData, TaskType, FlowNode } from "@/types/nodes";
+import { TaskType, FlowNode } from "@/types/nodes";
 import { Edge } from "@xyflow/react";
 import { toast } from "sonner";
 import { generateText } from "./text-service";
@@ -153,7 +153,7 @@ export async function executeWorkflow(
 
     // Process each start node and its descendants
     for (const startNode of startNodes) {
-      await processNode(startNode.id, graph, updatedNodes);
+      await processNode(startNode.id, graph, updatedNodes, edges);
     }
 
     // Show workflow completion toast
@@ -178,16 +178,21 @@ export async function executeWorkflow(
 async function processNode(
   nodeId: string,
   graph: Map<string, string[]>,
-  nodes: FlowNode[]
+  nodes: FlowNode[],
+  edges: Edge[]
 ): Promise<void> {
   // Find the node in the array
   const nodeIndex = nodes.findIndex((n) => n.id === nodeId);
   if (nodeIndex === -1) return;
 
+  // Get the current node
   const node = nodes[nodeIndex];
 
   try {
-    // Execute the current node
+    // Before executing, update this node's inputs based on connected nodes' outputs
+    updateNodeInputs(nodeId, nodes, edges);
+
+    // Execute the current node with updated inputs
     const updatedNode = await executeNode(node);
 
     // Update the node in the array
@@ -196,11 +201,61 @@ async function processNode(
     // Process all children
     const children = graph.get(nodeId) || [];
     for (const childId of children) {
-      await processNode(childId, graph, nodes);
+      await processNode(childId, graph, nodes, edges);
     }
   } catch (error) {
     console.error(`Error processing node ${nodeId}:`, error);
     // Continue with other nodes even if one fails
+  }
+}
+
+/**
+ * Updates a specific node's inputs based on its connected source nodes
+ */
+function updateNodeInputs(
+  targetNodeId: string,
+  nodes: FlowNode[],
+  edges: Edge[]
+): void {
+  // Find all edges where this node is the target
+  const incomingEdges = edges.filter((edge) => edge.target === targetNodeId);
+
+  if (incomingEdges.length === 0) return;
+
+  const targetNode = nodes.find((n) => n.id === targetNodeId);
+  if (!targetNode) return;
+
+  // For each incoming edge, update the target node's inputs
+  for (const edge of incomingEdges) {
+    const sourceNode = nodes.find((n) => n.id === edge.source);
+    if (!sourceNode || !sourceNode.data.outputs) continue;
+
+    const outputs = sourceNode.data.outputs;
+
+    // Handle different output types
+    for (const [key, value] of Object.entries(outputs)) {
+      // Handle text outputs (text, summary)
+      if (key === "text" || key === "summary") {
+        if (targetNode.data.taskType === TaskType.GENERATE_AUDIO) {
+          // Special handling for Audio node
+          targetNode.data.inputs.text = value;
+          console.log(
+            `Setting text input for audio node ${targetNodeId}: ${value}`
+          );
+        } else if ("text" in targetNode.data.inputs) {
+          targetNode.data.inputs.text = value;
+        } else if ("prompt" in targetNode.data.inputs) {
+          targetNode.data.inputs.prompt = value;
+        }
+      }
+      // Handle file-type inputs (images, audio)
+      else if (
+        (key === "image" || key === "imageUrl" || key === "audio") &&
+        "file" in targetNode.data.inputs
+      ) {
+        targetNode.data.inputs.file = value;
+      }
+    }
   }
 }
 
@@ -226,35 +281,40 @@ export function passDataBetweenNodes(
     const outputs = sourceNode.data.outputs;
 
     // Update inputs of target node based on source outputs
-    // This is a simple implementation - in a real application,
-    // you might want a more sophisticated mapping based on port types
     for (const [key, value] of Object.entries(outputs)) {
-      // Find a matching input field in the target node
-      // For simplicity, we're matching by output type (e.g., "text" outputs go to "text" or "prompt" inputs)
-      if (
-        key === "text" &&
-        ("text" in targetNode.data.inputs || "prompt" in targetNode.data.inputs)
-      ) {
+      // Special case for text-based outputs (text, summary, transcription)
+      if (key === "text" || key === "summary") {
+        // Handle text outputs to various inputs
         if ("text" in targetNode.data.inputs) {
           targetNode.data.inputs.text = value;
+          console.log(`Passing text data to ${targetNode.id}: ${value}`);
         } else if ("prompt" in targetNode.data.inputs) {
           targetNode.data.inputs.prompt = value;
+          console.log(
+            `Passing text data as prompt to ${targetNode.id}: ${value}`
+          );
         }
-      } else if (key === "image" && "file" in targetNode.data.inputs) {
-        targetNode.data.inputs.file = value;
-      } else if (key === "imageUrl" && "file" in targetNode.data.inputs) {
-        targetNode.data.inputs.file = value;
-      } else if (key === "audio" && "file" in targetNode.data.inputs) {
-        targetNode.data.inputs.file = value;
-      } else if (
-        key === "summary" &&
-        ("text" in targetNode.data.inputs || "prompt" in targetNode.data.inputs)
+      }
+      // Handle image outputs
+      else if (
+        (key === "image" || key === "imageUrl") &&
+        "file" in targetNode.data.inputs
       ) {
-        if ("text" in targetNode.data.inputs) {
-          targetNode.data.inputs.text = value;
-        } else if ("prompt" in targetNode.data.inputs) {
-          targetNode.data.inputs.prompt = value;
-        }
+        targetNode.data.inputs.file = value;
+      }
+      // Handle audio outputs
+      else if (key === "audio" && "file" in targetNode.data.inputs) {
+        targetNode.data.inputs.file = value;
+      }
+    }
+
+    // Special case for Generate Audio node (needs text input)
+    if (targetNode.data.taskType === TaskType.GENERATE_AUDIO) {
+      // Check all possible text outputs from source
+      if ("text" in sourceNode.data.outputs) {
+        targetNode.data.inputs.text = sourceNode.data.outputs.text;
+      } else if ("summary" in sourceNode.data.outputs) {
+        targetNode.data.inputs.text = sourceNode.data.outputs.summary;
       }
     }
   }

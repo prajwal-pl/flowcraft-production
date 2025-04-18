@@ -270,7 +270,7 @@ const Editor = () => {
         </Tabs>
 
         <Button
-          className="shadow-sm ml-auto"
+          className="shadow-sm ml-auto cursor-pointer"
           size="sm"
           variant="default"
           onClick={handleRunWorkflow}
