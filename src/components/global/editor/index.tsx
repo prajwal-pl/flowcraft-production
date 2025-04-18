@@ -35,6 +35,7 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEditorStore } from "@/store/editorStore";
 import "@xyflow/react/dist/style.css";
+import "./styles/flow-styles.css"; // Import custom ReactFlow styles
 
 const Editor = () => {
   // Get state from Zustand store
@@ -307,14 +308,14 @@ const Editor = () => {
                 proOptions={{ hideAttribution: true }}
               >
                 <Controls
-                  className="bg-background border border-border rounded-md shadow-sm"
+                  className="bg-zinc-800/90! border-zinc-700 text-white rounded-md shadow-md"
                   showInteractive={!isMobile}
                 />
                 {!isMobile && (
                   <MiniMap
-                    className="bg-background border border-border rounded-md shadow-sm"
+                    className="bg-zinc-800/90 border-zinc-700 text-white rounded-md shadow-md"
                     nodeColor="var(--color-primary)"
-                    maskColor="rgba(0, 0, 0, 0.1)"
+                    maskColor="rgba(0, 0, 0, 0.4)"
                     pannable
                     zoomable
                   />
