@@ -5,6 +5,7 @@ import { generateText } from "./text-service";
 import { generateAudio, transcribeAudio } from "./audio-service";
 import { summarizePDF } from "./pdf-service";
 import { generateImage, readImage } from "./image-service";
+import { sanitizeWorkflowData } from "@/utils/workflow-utils";
 
 /**
  * Executes a single node in the workflow
@@ -65,12 +66,21 @@ async function executeNode(node: FlowNode): Promise<FlowNode> {
         throw new Error(`Unsupported task type: ${taskType}`);
     }
 
+    // Add timestamp to outputs for tracking when the node was executed
+    outputs = {
+      ...outputs,
+      _executedAt: new Date().toISOString(),
+    };
+
+    // Ensure outputs are serializable
+    const sanitizedOutputs = sanitizeWorkflowData(outputs);
+
     // Return the updated node with outputs
     return {
       ...node,
       data: {
         ...node.data,
-        outputs,
+        outputs: sanitizedOutputs,
       },
     };
   } catch (error) {

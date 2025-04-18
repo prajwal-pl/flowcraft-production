@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -20,7 +19,6 @@ model User {
   clerkId   String   @unique // External ID from Clerk
   email     String   @unique
   name      String?
-  avatarUrl String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -47,10 +45,9 @@ model Workflow {
   edges Json // Stores all connections between nodes
 
   userId     String // Creator of the workflow
-  user       User                @relation(fields: [userId], references: [id])
+  user       User                @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
   executions WorkflowExecution[]
 
-  @@index([userId])
   @@map("workflows")
 }
 

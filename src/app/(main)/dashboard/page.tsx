@@ -3,8 +3,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BarChart3, Activity, Clock, Settings } from "lucide-react";
 import Link from "next/link";
+import { getAllWorkflows, getWorkflowExecutions } from "@/actions/workflows";
+import { formatDistanceToNow } from "date-fns";
 
-const DashboardPage = () => {
+// Making this a server component to fetch data
+const DashboardPage = async () => {
+  // Fetch actual workflow data
+  const workflows = await getAllWorkflows();
+
+  // Calculate stats
+  const activeWorkflows = workflows.filter((w) => w.lastExecuted).length;
+  const completedTasks = workflows.reduce((acc, workflow) => {
+    return acc + (workflow.executionCount || 0);
+  }, 0);
+  const totalProjects = workflows.length;
+
+  // Get most recent workflows (limit to 3)
+  const recentWorkflows = workflows
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    )
+    .slice(0, 3);
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-zinc-900 to-black p-6">
       <div className="flex items-center justify-between mb-8">
@@ -19,25 +40,28 @@ const DashboardPage = () => {
         {[
           {
             title: "Active Workflows",
-            value: "24",
+            value: activeWorkflows.toString(),
             icon: Activity,
             color: "bg-zinc-800/90",
           },
           {
             title: "Completed Tasks",
-            value: "156",
+            value: completedTasks.toString(),
             icon: Clock,
             color: "bg-zinc-800/90",
           },
           {
             title: "Workspace Usage",
-            value: "65%",
+            value:
+              totalProjects > 0
+                ? `${Math.min(Math.round((totalProjects / 50) * 100), 100)}%`
+                : "0%",
             icon: BarChart3,
             color: "bg-zinc-800/90",
           },
           {
             title: "Total Projects",
-            value: "12",
+            value: totalProjects.toString(),
             icon: BarChart3,
             color: "bg-zinc-800/90",
           },
@@ -68,28 +92,38 @@ const DashboardPage = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="flex justify-between items-center p-3 bg-zinc-700/50 rounded-md"
-              >
-                <div>
-                  <h3 className="font-medium">Project {i}</h3>
-                  <p className="text-sm text-zinc-400">
-                    Last edited 2 days ago
-                  </p>
+            {recentWorkflows.length > 0 ? (
+              recentWorkflows.map((workflow) => (
+                <div
+                  key={workflow.id}
+                  className="flex justify-between items-center p-3 bg-zinc-700/50 rounded-md"
+                >
+                  <div>
+                    <h3 className="font-medium">{workflow.name}</h3>
+                    <p className="text-sm text-zinc-400">
+                      {workflow.updatedAt
+                        ? `Last edited ${formatDistanceToNow(
+                            new Date(workflow.updatedAt)
+                          )} ago`
+                        : "Not edited yet"}
+                    </p>
+                  </div>
+                  <Link href={`/workspace/editor/${workflow.id}`}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-zinc-300 hover:text-white hover:bg-zinc-600"
+                    >
+                      Open <ArrowRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  </Link>
                 </div>
-                <Link href={`/workspace/editor/${i}`}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-zinc-300 hover:text-white hover:bg-zinc-600"
-                  >
-                    Open <ArrowRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </Link>
+              ))
+            ) : (
+              <div className="text-center py-3 text-zinc-400">
+                No projects yet. Create your first workflow!
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
@@ -100,10 +134,12 @@ const DashboardPage = () => {
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Button className="w-full justify-start bg-zinc-700 hover:bg-zinc-600 text-white">
-              <Activity className="mr-2 h-5 w-5" /> New Workflow
-            </Button>
+          <CardContent className="space-y-2">
+            <Link href="/workspace/editor/new">
+              <Button className="mb-2 w-full justify-start bg-zinc-700 hover:bg-zinc-600 text-white">
+                <Activity className="mr-2 h-5 w-5" /> New Workflow
+              </Button>
+            </Link>
             <Button className="w-full justify-start bg-zinc-700 hover:bg-zinc-600 text-white">
               <BarChart3 className="mr-2 h-5 w-5" /> View Analytics
             </Button>

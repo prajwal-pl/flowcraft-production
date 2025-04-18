@@ -26,11 +26,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { addUser } from "@/actions/users";
 
 export default function SignUpPage() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const [emailAddress, setEmailAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [username, setUsername] = React.useState("");
   const [verifying, setVerifying] = React.useState(false);
   const [code, setCode] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
@@ -86,6 +88,12 @@ export default function SignUpPage() {
       // and redirect the user
       if (signUpAttempt.status === "complete") {
         await setActive({ session: signUpAttempt.createdSessionId });
+        const clerkId = signUpAttempt?.createdUserId!;
+        await addUser({
+          clerkId,
+          email: emailAddress,
+          name: username,
+        });
         router.push("/dashboard");
       } else {
         console.error(JSON.stringify(signUpAttempt, null, 2));
@@ -253,6 +261,26 @@ export default function SignUpPage() {
                   </motion.div>
                 )}
                 <div className="space-y-2">
+                  <Label
+                    htmlFor="username"
+                    className="text-sm font-medium text-zinc-300"
+                  >
+                    Username
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="username"
+                      type="text"
+                      placeholder="Enter your username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="pl-10 py-6 bg-zinc-700/50 border-zinc-600 text-white placeholder-zinc-500"
+                      required
+                    />
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <UserIcon className="h-5 w-5 text-zinc-500" />
+                    </div>
+                  </div>
                   <Label
                     htmlFor="email"
                     className="text-sm font-medium text-zinc-300"

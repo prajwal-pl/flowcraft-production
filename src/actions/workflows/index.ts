@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
 
@@ -10,6 +12,7 @@ export const createWorkflow = async (workflowData: {
   edges: any;
 }) => {
   const { userId } = await auth();
+  console.log(userId);
 
   if (!userId) {
     throw new Error("Unauthenticated");
@@ -101,7 +104,6 @@ export const getPublicWorkflows = async () => {
         user: {
           select: {
             name: true,
-            avatarUrl: true,
           },
         },
       },
