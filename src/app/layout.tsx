@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "FlowCraft",
   description: "Visual workflow automation platform",
+  icons: ["/logo.svg"],
 };
 
 export default function RootLayout({
