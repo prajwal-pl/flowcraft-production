@@ -177,7 +177,7 @@ export default function SignupPage() {
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating Account..." : "Create Account"}
+              {isLoading ? "Creating account..." : "Create account"}
             </Button>
           </CardFooter>
         </form>
