@@ -10,9 +10,11 @@ import {
   GalleryVerticalEnd,
   Map,
   PieChart,
+  Settings,
   Settings2,
   SquareTerminal,
 } from "lucide-react";
+import { useUser, useClerk } from "@clerk/nextjs";
 
 import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
@@ -24,7 +26,11 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import { getUserProfile } from "@/actions/users";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 
 const data = {
   user: {
@@ -51,122 +57,74 @@ const data = {
   ],
   navMain: [
     {
-      title: "Playground",
-      url: "#",
+      title: "Dashboard",
+      url: "/dashboard",
       icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
     },
     {
-      title: "Models",
-      url: "#",
+      title: "Workspace",
+      url: "/workspace",
       icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
     },
     {
       title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
+      url: "/settings",
+      icon: Settings,
     },
   ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user: clerkUser } = useUser();
+  const [dbUser, setDbUser] = useState<any>(null);
+
+  // Fetch user data from database
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const userProfile = await getUserProfile();
+        if (userProfile) {
+          setDbUser(userProfile);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user profile:", error);
+      }
+    };
+
+    if (clerkUser) {
+      fetchUserProfile();
+    }
+  }, [clerkUser]);
+
   return (
     <Sidebar collapsible="icon" variant="floating" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <Link href={"/"} className="flex items-center justify-center">
+          <h1 className="text-xl font-bold bg-gray-50 text-black px-2 rounded">
+            F
+          </h1>
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        {clerkUser ? (
+          <NavUser
+            user={{
+              name:
+                dbUser?.name ||
+                clerkUser.fullName ||
+                clerkUser.username ||
+                "User",
+              email: clerkUser.primaryEmailAddress?.emailAddress || "",
+              avatar: clerkUser.imageUrl || "",
+            }}
+          />
+        ) : (
+          <NavUser user={data.user} />
+        )}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

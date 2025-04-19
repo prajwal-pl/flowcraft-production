@@ -4,8 +4,17 @@ import React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { MobileNav } from "@/components/mobile-nav";
+import { useSession } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
+  const router = useRouter();
+  const { isSignedIn } = useSession();
+
+  if (!isSignedIn) {
+    router.push("/sign-in");
+  }
+
   return (
     <SidebarProvider defaultOpen={false}>
       <div className="flex h-screen w-full">

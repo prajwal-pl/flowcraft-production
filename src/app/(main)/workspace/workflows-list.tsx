@@ -257,10 +257,7 @@ export const WorkflowsList = ({ workflowsData }: WorkflowsListProps) => {
                         <Pencil className="h-4 w-4 mr-2" />
                         Edit Name
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="hover:bg-zinc-700 cursor-pointer">
-                        <Copy className="h-4 w-4 mr-2" />
-                        Duplicate
-                      </DropdownMenuItem>
+
                       <DropdownMenuSeparator className="bg-zinc-700" />
                       <DropdownMenuItem
                         className="hover:bg-red-900 text-red-400 cursor-pointer"

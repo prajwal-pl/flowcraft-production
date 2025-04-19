@@ -403,24 +403,30 @@ const Editor = () => {
             className="bg-transparent text-base font-medium focus:outline-none focus:ring-1 focus:ring-primary/50 rounded px-2 py-1 w-full"
             placeholder="Untitled Workflow"
           />
-          
+
           <Tabs
             value={viewMode}
             onValueChange={handleTabChange}
             className="w-full"
           >
             <TabsList className="w-full">
-              <TabsTrigger value="canvas" className="flex items-center gap-1.5 flex-1">
+              <TabsTrigger
+                value="canvas"
+                className="flex items-center gap-1.5 flex-1"
+              >
                 <Layers className="h-4 w-4" />
                 Canvas
               </TabsTrigger>
-              <TabsTrigger value="results" className="flex items-center gap-1.5 flex-1">
+              <TabsTrigger
+                value="results"
+                className="flex items-center gap-1.5 flex-1"
+              >
                 <BarChart className="h-4 w-4" />
                 Results
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          
+
           <div className="flex gap-2 w-full">
             <Button
               className="shadow-sm flex-1"
@@ -460,7 +466,7 @@ const Editor = () => {
             </Button>
           </div>
         </div>
-        
+
         {/* Desktop-only container - keep the original layout */}
         <div className={isMobile ? "hidden" : "flex items-center flex-1"}>
           <input
@@ -474,7 +480,10 @@ const Editor = () => {
           <div className="ml-4 flex-1">
             <Tabs value={viewMode} onValueChange={handleTabChange}>
               <TabsList>
-                <TabsTrigger value="canvas" className="flex items-center gap-1.5">
+                <TabsTrigger
+                  value="canvas"
+                  className="flex items-center gap-1.5"
+                >
                   <Layers className="h-4 w-4" />
                   Canvas
                 </TabsTrigger>
@@ -558,7 +567,9 @@ const Editor = () => {
                   className="bg-zinc-800/90! border-zinc-700 text-white rounded-md shadow-md"
                   showInteractive={!isMobile}
                   position={isMobile ? "bottom-right" : "bottom-left"}
-                  style={isMobile ? { bottom: '20px', right: '20px' } : undefined}
+                  style={
+                    isMobile ? { bottom: "20px", right: "20px" } : undefined
+                  }
                 />
                 {!isMobile && (
                   <MiniMap

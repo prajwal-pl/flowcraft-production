@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BarChart3, Activity, Clock, Settings } from "lucide-react";
 import Link from "next/link";
-import { getAllWorkflows, getWorkflowExecutions } from "@/actions/workflows";
+import { getAllWorkflows } from "@/actions/workflows";
 import { formatDistanceToNow } from "date-fns";
 
 // Making this a server component to fetch data
@@ -13,9 +13,8 @@ const DashboardPage = async () => {
 
   // Calculate stats
   const activeWorkflows = workflows.filter((w) => w.lastExecuted).length;
-  const completedTasks = workflows.reduce((acc, workflow) => {
-    return acc + (workflow.executionCount || 0);
-  }, 0);
+  // We don't have executionCount directly, so just use the number of workflows with lastExecuted
+  const completedTasks = activeWorkflows;
   const totalProjects = workflows.length;
 
   // Get most recent workflows (limit to 3)
@@ -30,9 +29,11 @@ const DashboardPage = async () => {
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-zinc-900 to-black p-6">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-        <Button className="bg-zinc-700 hover:bg-zinc-600 text-white">
-          <Settings className="mr-2 h-5 w-5" /> Settings
-        </Button>
+        <Link href="/settings">
+          <Button className="bg-zinc-700 hover:bg-zinc-600 text-white">
+            <Settings className="mr-2 h-5 w-5" /> Settings
+          </Button>
+        </Link>
       </div>
 
       {/* Stats Overview */}
@@ -45,7 +46,7 @@ const DashboardPage = async () => {
             color: "bg-zinc-800/90",
           },
           {
-            title: "Completed Tasks",
+            title: "Completed Runs",
             value: completedTasks.toString(),
             icon: Clock,
             color: "bg-zinc-800/90",

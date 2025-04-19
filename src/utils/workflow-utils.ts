@@ -60,5 +60,5 @@ export const sanitizeWorkflowData = (data: any): any => {
     }
   }
 
-  return sanitized;
+  return sanitized; // Return the sanitized object
 };
