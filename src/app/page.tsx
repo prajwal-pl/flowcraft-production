@@ -12,6 +12,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import { useUser } from "@clerk/nextjs";
+import { motion } from "framer-motion";
 
 const HomePage = () => {
   const { user } = useUser();
@@ -28,48 +29,196 @@ const HomePage = () => {
       {/* Hero section with container scroll animation */}
       <ContainerScroll
         titleComponent={
-          <div className="max-w-3xl mx-auto mb-10">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-              Create powerful workflows with{" "}
-              <span className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-zinc-300 to-white">
-                FlowCraft
-              </span>
-            </h1>
-            <p className="text-xl md:text-2xl text-zinc-400 mb-8">
-              Build, automate, and deploy workflows visually without writing a
-              single line of code
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/dashboard">
-                <Button className="px-8 py-6 text-lg bg-zinc-50 text-zinc-900 hover:bg-zinc-200 rounded-full">
-                  Get Started
-                </Button>
-              </Link>
-              <Link href="/sign-in">
-                <Button
-                  variant="outline"
-                  className="px-8 py-6 text-lg border-zinc-700 text-white hover:bg-zinc-800 rounded-full"
+          <div className="relative z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="max-w-4xl mx-auto mb-8"
+            >
+              <div className="flex justify-center mb-6">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 15,
+                    delay: 0.2,
+                  }}
+                  className="bg-gradient-to-r from-purple-500 to-blue-600 p-1.5 rounded-full"
                 >
-                  Sign In
-                </Button>
-              </Link>
-            </div>
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
+                    className="bg-zinc-950 block px-4 py-1.5 rounded-full text-white font-medium"
+                  >
+                    Now with AI-powered workflow suggestions
+                  </motion.span>
+                </motion.div>
+              </div>
+
+              <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight">
+                Create powerful workflows with{" "}
+                <span className="text-gradient bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-600">
+                  FlowCraft
+                </span>
+              </h1>
+
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.8 }}
+                className="text-xl md:text-2xl text-zinc-300 mb-10 max-w-3xl mx-auto leading-relaxed"
+              >
+                Build, automate, and deploy workflows visually without writing a
+                single line of code
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+                className="flex flex-col sm:flex-row gap-4 justify-center"
+              >
+                <Link href="/dashboard">
+                  <Button className="px-8 py-6 text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-full shadow-lg shadow-blue-700/20 border-0">
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.7, duration: 0.5 }}
+                      className="flex items-center"
+                    >
+                      Get Started
+                      <ChevronRightIcon className="ml-2 h-5 w-5" />
+                    </motion.span>
+                  </Button>
+                </Link>
+                <Link href="/sign-in">
+                  <Button
+                    variant="outline"
+                    className="px-8 py-6 text-lg border-zinc-700 text-white hover:bg-zinc-800 rounded-full backdrop-blur-md"
+                  >
+                    Sign In
+                  </Button>
+                </Link>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.9, duration: 1 }}
+                className="mt-10 flex flex-wrap gap-3 justify-center"
+              >
+                <div className="flex items-center gap-1.5 text-zinc-400 text-sm">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-green-400"
+                  >
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  <span>No-code builder</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-zinc-400 text-sm">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-green-400"
+                  >
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  <span>100+ integrations</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-zinc-400 text-sm">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-green-400"
+                  >
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  <span>Premium support</span>
+                </div>
+              </motion.div>
+            </motion.div>
           </div>
         }
       >
-        <div className="flex items-center justify-center w-full h-full bg-zinc-900 rounded-xl overflow-hidden">
-          <div className="relative w-full h-full">
+        <div className="flex items-center justify-center w-full h-full bg-zinc-900/70 rounded-xl overflow-hidden relative group">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.7 }}
+            className="relative w-full h-full"
+          >
             <Image
               src="/landing.png"
               alt="FlowCraft Workflow Interface"
               width={1920}
               height={1080}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
               priority
               quality={100}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-40"></div>
-          </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-70"></div>
+
+            {/* Floating elements for visual interest */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1, duration: 1 }}
+              className="absolute top-10 left-10 md:left-20 bg-white/10 backdrop-blur-lg rounded-lg p-2 md:p-4 border border-white/20 shadow-xl"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-3 w-3 bg-green-500 rounded-full"></div>
+                <div className="text-xs md:text-sm font-medium text-white">
+                  Workflow Active
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.2, duration: 1 }}
+              className="absolute top-10 right-10 md:right-20 bg-white/10 backdrop-blur-lg rounded-lg p-2 md:p-4 border border-white/20 shadow-xl"
+            >
+              <div className="flex items-center gap-2">
+                <div className="text-xs md:text-sm font-medium text-white">
+                  Processing 100%
+                </div>
+                <div className="h-2 w-20 bg-gray-700 rounded-full overflow-hidden">
+                  <div className="h-full w-full bg-blue-500 rounded-full"></div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
         </div>
       </ContainerScroll>
 
