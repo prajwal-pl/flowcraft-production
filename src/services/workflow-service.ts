@@ -3,7 +3,7 @@ import { Edge } from "@xyflow/react";
 import { toast } from "sonner";
 import { generateText } from "./text-service";
 import { generateAudio, transcribeAudio } from "./audio-service";
-import { summarizePDF } from "./pdf-service";
+import { summarizePDF, summarizePDFWithGemini } from "./pdf-service";
 import { generateImage, readImage } from "./image-service";
 import { sanitizeWorkflowData } from "@/utils/workflow-utils";
 
@@ -55,7 +55,7 @@ async function executeNode(node: FlowNode): Promise<FlowNode> {
         break;
 
       case TaskType.SUMMARIZE_PDF:
-        const summary = await summarizePDF(
+        const summary = await summarizePDFWithGemini(
           inputs.file,
           inputs.maxLength || 500
         );

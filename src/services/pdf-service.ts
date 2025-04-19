@@ -1,5 +1,6 @@
 import Groq from "groq-sdk";
 import { toast } from "sonner";
+import { GoogleGenAI } from "@google/genai";
 
 // Initialize Groq client with optional API key
 const groqApiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY || "";
@@ -10,6 +11,17 @@ if (hasGroqApiKey) {
   groq = new Groq({
     apiKey: groqApiKey,
     dangerouslyAllowBrowser: true,
+  });
+}
+
+// Initialize Google Gemini client with optional API key
+const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
+const hasGeminiApiKey = !!geminiApiKey;
+
+let gemini: GoogleGenAI | null = null;
+if (hasGeminiApiKey) {
+  gemini = new GoogleGenAI({
+    apiKey: geminiApiKey,
   });
 }
 
@@ -98,6 +110,69 @@ async function extractTextFromPDF(file: File): Promise<string> {
 }
 
 /**
+ * Converts a File to a base64 string for Gemini API
+ */
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(file);
+
+    reader.onload = () => {
+      const buffer = reader.result as ArrayBuffer;
+      const bytes = new Uint8Array(buffer);
+      const binary = bytes.reduce(
+        (acc, byte) => acc + String.fromCharCode(byte),
+        ""
+      );
+      const base64 = btoa(binary);
+      resolve(base64);
+    };
+
+    reader.onerror = (error) => reject(error);
+  });
+}
+
+/**
+ * Summarizes PDF content with Gemini API
+ */
+export async function summarizePDFWithGemini(
+  file: File,
+  maxLength: number
+): Promise<string> {
+  console.log(gemini);
+  if (!gemini) throw new Error("Gemini API is not configured");
+
+  try {
+    // Convert the PDF file to base64
+    const base64Data = await fileToBase64(file);
+
+    // Prepare the contents for the API request
+    const contents = [
+      { text: `Summarize this document in about ${maxLength} characters:` },
+      {
+        inlineData: {
+          mimeType: "application/pdf",
+          data: base64Data,
+        },
+      },
+    ];
+
+    // Generate content
+    const result = await gemini.models.generateContent({
+      model: "gemini-1.5-flash",
+      contents: contents,
+    });
+
+    const response = result.text;
+    console.log(response);
+    return response || "Unable to generate PDF summary with Gemini.";
+  } catch (error) {
+    console.error("Error with Gemini API for PDF summarization:", error);
+    throw error;
+  }
+}
+
+/**
  * Summarizes PDF content
  * Uses actual PDF content when possible, with backup simulations
  */
@@ -137,8 +212,21 @@ export async function summarizePDF(
     }
 
     let summaryText = "";
+    let apiUsed = "none";
 
-    if (hasGroqApiKey && groq) {
+    // Try to use Gemini API first (it handles PDFs natively)
+    if (hasGeminiApiKey && gemini && file instanceof File) {
+      try {
+        summaryText = await summarizePDFWithGemini(file, maxLength);
+        apiUsed = "gemini";
+      } catch (error) {
+        console.error("Error with Gemini API for summarization:", error);
+        // Continue to fallback options
+      }
+    }
+
+    // If Gemini failed or wasn't available, try Groq API
+    if (!summaryText && hasGroqApiKey && groq) {
       try {
         // Generate a summary using Groq and the extracted content
         const summary = await groq.chat.completions.create({
@@ -160,31 +248,36 @@ export async function summarizePDF(
         summaryText =
           summary.choices[0]?.message?.content ||
           "Unable to generate PDF summary. The model didn't return a valid response.";
+
+        if (summaryText.length >= 20) {
+          apiUsed = "groq";
+        }
       } catch (error) {
         console.error("Error with Groq API for summarization:", error);
         // Fall back to rule-based summarization
-        summaryText = generateFallbackSummary(fileName, fileContent, maxLength);
       }
-    } else {
-      // Generate rule-based summary when API is not available
-      summaryText = generateFallbackSummary(fileName, fileContent, maxLength);
     }
 
-    // Ensure the summary isn't empty and meets minimum length
+    // If both APIs failed or weren't available, use fallback
     if (!summaryText || summaryText.length < 20) {
       summaryText = generateFallbackSummary(fileName, fileContent, maxLength);
+      apiUsed = "fallback";
     }
 
-    // Show success toast
-    toast.success(
-      hasGroqApiKey
-        ? "PDF summarization complete"
-        : "PDF summarization complete (Simulation)",
-      {
-        id: toastId,
-        description: "PDF summary is now available in the workflow.",
-      }
-    );
+    // Show success toast with appropriate API information
+    let toastMessage = "PDF summarization complete";
+    if (apiUsed === "gemini") {
+      toastMessage = "PDF summarized with Gemini AI";
+    } else if (apiUsed === "groq") {
+      toastMessage = "PDF summarized with Groq AI";
+    } else {
+      toastMessage = "PDF summarized (simulation)";
+    }
+
+    toast.success(toastMessage, {
+      id: toastId,
+      description: "PDF summary is now available in the workflow.",
+    });
 
     return summaryText;
   } catch (error) {
