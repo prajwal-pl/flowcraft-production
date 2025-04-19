@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
   Card,
   CardContent,
@@ -64,6 +65,8 @@ export const WorkflowsList = ({ workflowsData }: WorkflowsListProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [workflowToDelete, setWorkflowToDelete] = useState<string | null>(null);
 
   // Filter workflows based on search term
   const filteredWorkflows = workflows.filter(
@@ -127,22 +130,26 @@ export const WorkflowsList = ({ workflowsData }: WorkflowsListProps) => {
   };
 
   // Delete workflow
-  const handleDeleteWorkflow = async (id: string) => {
-    const confirmation = confirm(
-      "Are you sure you want to delete this workflow? This action cannot be undone."
-    );
-
-    if (!confirmation) return;
+  const handleDeleteWorkflow = async () => {
+    if (!workflowToDelete) return;
 
     try {
-      await deleteWorkflow(id);
-      setWorkflows(workflows.filter((w) => w.id !== id));
+      await deleteWorkflow(workflowToDelete);
+      setWorkflows(workflows.filter((w) => w.id !== workflowToDelete));
       toast.success("Workflow deleted successfully");
       router.refresh();
     } catch (error) {
       console.error("Error deleting workflow:", error);
       toast.error("Failed to delete workflow");
+    } finally {
+      setShowDeleteConfirm(false);
+      setWorkflowToDelete(null);
     }
+  };
+
+  const hideDeleteConfirm = () => {
+    setShowDeleteConfirm(false);
+    setWorkflowToDelete(null);
   };
 
   // Calculate time since
@@ -170,7 +177,7 @@ export const WorkflowsList = ({ workflowsData }: WorkflowsListProps) => {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 relative">
       {/* Search bar in corner with reduced width */}
       <div className="flex justify-end mb-2">
         <div className="relative w-64">
@@ -257,7 +264,10 @@ export const WorkflowsList = ({ workflowsData }: WorkflowsListProps) => {
                       <DropdownMenuSeparator className="bg-zinc-700" />
                       <DropdownMenuItem
                         className="hover:bg-red-900 text-red-400 cursor-pointer"
-                        onClick={() => handleDeleteWorkflow(workflow.id)}
+                        onClick={() => {
+                          setWorkflowToDelete(workflow.id);
+                          setShowDeleteConfirm(true);
+                        }}
                       >
                         <Trash className="h-4 w-4 mr-2" />
                         Delete
@@ -331,6 +341,41 @@ export const WorkflowsList = ({ workflowsData }: WorkflowsListProps) => {
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
+      )}
+
+      {/* Custom delete confirmation overlay */}
+      {showDeleteConfirm && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-50"
+            onClick={hideDeleteConfirm}
+          ></div>
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md bg-zinc-900 p-6 rounded-lg border border-zinc-800 shadow-xl text-white">
+            <h2 className="text-lg font-semibold">Delete Workflow</h2>
+            <p className="mt-2 text-zinc-400 text-sm">
+              Are you sure you want to delete this workflow? This action cannot
+              be undone.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="bg-zinc-800 text-white hover:bg-zinc-700 border-zinc-700"
+                onClick={hideDeleteConfirm}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                className="bg-red-600 text-white hover:bg-red-500"
+                onClick={handleDeleteWorkflow}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

@@ -1,0 +1,50 @@
+/* Mobile-specific styles for ReactFlow */
+
+@media screen and (max-width: 767px) {
+  /* Increase hit area of connection points */
+  .react-flow__handle {
+    width: 12px !important;
+    height: 12px !important;
+    transform: translate(-50%, -50%);
+  }
+  
+  /* Make nodes easier to interact with on touch devices */
+  .react-flow__node {
+    touch-action: none;
+    min-width: 180px;
+    min-height: 100px;
+  }
+  
+  /* Adjust controls for better mobile visibility */
+  .react-flow__controls {
+    bottom: 20px !important;
+    right: 20px !important;
+    padding: 4px !important;
+  }
+  
+  .react-flow__controls button {
+    width: 24px !important;
+    height: 24px !important;
+    padding: 3px !important;
+  }
+  
+  /* Better edge interaction on mobile */
+  .react-flow__edge {
+    pointer-events: stroke;
+    stroke-width: 4 !important; /* Wider hit area for edges */
+  }
+  
+  .react-flow__edge-path {
+    stroke-width: 2.5px !important; /* Slightly thicker visible edges */
+  }
+  
+  /* Improve panning behavior on mobile */
+  .react-flow__pane {
+    touch-action: none;
+  }
+  
+  /* Ensure node content is readable on mobile */
+  .react-flow__node-content {
+    font-size: 14px !important;
+  }
+}

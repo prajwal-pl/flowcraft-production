@@ -19,8 +19,17 @@ model User {
   clerkId   String   @unique // External ID from Clerk
   email     String   @unique
   name      String?
+  bio       String? // User biography or profile description
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // User preferences
+  theme              String?   @default("system") // "light", "dark", "system"
+  reducedMotion      Boolean   @default(false)
+  emailNotifications Boolean   @default(true)
+  marketingEmails    Boolean   @default(false)
+  securityAlerts     Boolean   @default(true)
+  lastActive         DateTime? @default(now())
 
   // Relations
   workflows Workflow[] // User can have multiple workflows
@@ -67,6 +76,5 @@ model WorkflowExecution {
   workflowId String
   workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
 
-  @@index([workflowId])
   @@map("workflow_executions")
 }

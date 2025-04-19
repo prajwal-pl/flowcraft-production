@@ -46,7 +46,7 @@ import { useParams, useRouter } from "next/navigation";
 import { sanitizeWorkflowData } from "@/utils/workflow-utils";
 import "@xyflow/react/dist/style.css";
 import "./styles/flow-styles.css"; // Import custom ReactFlow styles
-import { auth } from "@clerk/nextjs/server";
+import "./styles/mobile-flow.css"; // Import mobile-specific styles
 import { useSession, useUser } from "@clerk/nextjs";
 
 const Editor = () => {
@@ -394,7 +394,75 @@ const Editor = () => {
     <div className="flex flex-col h-screen w-full overflow-hidden">
       {/* Tabs at the top */}
       <div className="p-4 border-b bg-background flex items-center">
-        <div className="flex items-center gap-4 flex-1">
+        {/* Mobile-only container with stacked layout */}
+        <div className={isMobile ? "flex flex-col w-full gap-3" : "hidden"}>
+          <input
+            type="text"
+            value={workflowName}
+            onChange={(e) => setWorkflowName(e.target.value)}
+            className="bg-transparent text-base font-medium focus:outline-none focus:ring-1 focus:ring-primary/50 rounded px-2 py-1 w-full"
+            placeholder="Untitled Workflow"
+          />
+          
+          <Tabs
+            value={viewMode}
+            onValueChange={handleTabChange}
+            className="w-full"
+          >
+            <TabsList className="w-full">
+              <TabsTrigger value="canvas" className="flex items-center gap-1.5 flex-1">
+                <Layers className="h-4 w-4" />
+                Canvas
+              </TabsTrigger>
+              <TabsTrigger value="results" className="flex items-center gap-1.5 flex-1">
+                <BarChart className="h-4 w-4" />
+                Results
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          <div className="flex gap-2 w-full">
+            <Button
+              className="shadow-sm flex-1"
+              size="default"
+              variant="secondary"
+              onClick={saveWorkflow}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save
+                </>
+              )}
+            </Button>
+
+            <Button
+              className="shadow-sm cursor-pointer flex-1"
+              size="default"
+              variant="default"
+              onClick={handleRunWorkflow}
+              disabled={isRunning || nodes.length === 0}
+            >
+              {isRunning ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Running...
+                </>
+              ) : (
+                "Run Workflow"
+              )}
+            </Button>
+          </div>
+        </div>
+        
+        {/* Desktop-only container - keep the original layout */}
+        <div className={isMobile ? "hidden" : "flex items-center flex-1"}>
           <input
             type="text"
             value={workflowName}
@@ -403,64 +471,62 @@ const Editor = () => {
             placeholder="Untitled Workflow"
           />
 
-          <Tabs
-            value={viewMode}
-            onValueChange={handleTabChange}
-            className="flex-1"
-          >
-            <TabsList>
-              <TabsTrigger value="canvas" className="flex items-center gap-1.5">
-                <Layers className="h-4 w-4" />
-                Canvas
-              </TabsTrigger>
-              <TabsTrigger
-                value="results"
-                className="flex items-center gap-1.5"
-              >
-                <BarChart className="h-4 w-4" />
-                Results
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
+          <div className="ml-4 flex-1">
+            <Tabs value={viewMode} onValueChange={handleTabChange}>
+              <TabsList>
+                <TabsTrigger value="canvas" className="flex items-center gap-1.5">
+                  <Layers className="h-4 w-4" />
+                  Canvas
+                </TabsTrigger>
+                <TabsTrigger
+                  value="results"
+                  className="flex items-center gap-1.5"
+                >
+                  <BarChart className="h-4 w-4" />
+                  Results
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
 
-        <div className="flex gap-2">
-          <Button
-            className="shadow-sm"
-            size="sm"
-            variant="secondary"
-            onClick={saveWorkflow}
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                Save
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              className="shadow-sm"
+              size="sm"
+              variant="secondary"
+              onClick={saveWorkflow}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save
+                </>
+              )}
+            </Button>
 
-          <Button
-            className="shadow-sm cursor-pointer"
-            size="sm"
-            variant="default"
-            onClick={handleRunWorkflow}
-            disabled={isRunning || nodes.length === 0}
-          >
-            {isRunning ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Running...
-              </>
-            ) : (
-              "Run Workflow"
-            )}
-          </Button>
+            <Button
+              className="shadow-sm cursor-pointer"
+              size="sm"
+              variant="default"
+              onClick={handleRunWorkflow}
+              disabled={isRunning || nodes.length === 0}
+            >
+              {isRunning ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Running...
+                </>
+              ) : (
+                "Run Workflow"
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -482,11 +548,17 @@ const Editor = () => {
                 onEdgesChange={onEdgesChange}
                 nodeTypes={nodeTypes}
                 fitView
+                zoomOnPinch={true}
+                panOnDrag={true}
+                zoomOnScroll={!isMobile}
+                panOnScroll={false}
                 proOptions={{ hideAttribution: true }}
               >
                 <Controls
                   className="bg-zinc-800/90! border-zinc-700 text-white rounded-md shadow-md"
                   showInteractive={!isMobile}
+                  position={isMobile ? "bottom-right" : "bottom-left"}
+                  style={isMobile ? { bottom: '20px', right: '20px' } : undefined}
                 />
                 {!isMobile && (
                   <MiniMap
@@ -525,7 +597,7 @@ const Editor = () => {
           </>
         ) : (
           // Results View
-          <div className="flex-1 p-4 overflow-auto">
+          <div className="flex-1 p-2 sm:p-4 overflow-auto">
             <ResultsView />
           </div>
         )}

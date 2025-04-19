@@ -1,5 +1,8 @@
 import Groq from "groq-sdk";
 import { toast } from "sonner";
+import { GoogleGenAI } from "@google/genai";
+import * as fs from "node:fs";
+import { generateImageWithAI } from "@/actions/image";
 
 // Initialize Groq client with optional API key
 const groqApiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY || "";
@@ -14,7 +17,7 @@ if (hasGroqApiKey) {
 }
 
 /**
- * Generates an image using an AI service or provides a placeholder
+ * Generates an image using Gemini AI service
  */
 export async function generateImage(
   prompt: string,
@@ -24,41 +27,23 @@ export async function generateImage(
     // Show pending toast
     const toastId = toast.loading("Generating image...");
 
-    // Simulate processing time
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Append size information to prompt for better results
+    const enhancedPrompt = `${prompt} (Generate in ${size} resolution)`;
 
-    // Use random placeholder images for better visual variety
-    const placeholderImages: Record<string, string[]> = {
-      "256x256": [
-        "https://placehold.co/256x256/36C/EEF?text=AI+Image",
-        "https://placehold.co/256x256/F93/FED?text=AI+Image",
-        "https://placehold.co/256x256/3C6/EFE?text=AI+Image",
-      ],
-      "512x512": [
-        "https://placehold.co/512x512/36C/EEF?text=AI+Image",
-        "https://placehold.co/512x512/F93/FED?text=AI+Image",
-        "https://placehold.co/512x512/3C6/EFE?text=AI+Image",
-      ],
-      "1024x1024": [
-        "https://placehold.co/1024x1024/36C/EEF?text=AI+Image",
-        "https://placehold.co/1024x1024/F93/FED?text=AI+Image",
-        "https://placehold.co/1024x1024/3C6/EFE?text=AI+Image",
-      ],
-    };
+    // Call the server action to generate the image
+    const result = await generateImageWithAI(enhancedPrompt);
 
-    // Get a random image for the selected size
-    const availableImages =
-      placeholderImages[size] || placeholderImages["512x512"];
-    const randomIndex = Math.floor(Math.random() * availableImages.length);
-    const imageUrl = availableImages[randomIndex];
+    if (!result.image) {
+      throw new Error("Failed to generate image: No image data received");
+    }
 
     // Show success toast
-    toast.success("Image generation complete (Simulation)", {
+    toast.success("Image generation complete", {
       id: toastId,
       description: "Image has been generated successfully",
     });
 
-    return imageUrl;
+    return result.image;
   } catch (error) {
     console.error("Error generating image:", error);
 
