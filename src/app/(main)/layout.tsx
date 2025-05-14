@@ -7,7 +7,8 @@ import { MobileNav } from "@/components/mobile-nav";
 import { useSession } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 
-const Layout = ({ children }: { children: React.ReactNode }) => {  const router = useRouter();
+const Layout = ({ children }: { children: React.ReactNode }) => {
+  const router = useRouter();
   const { isSignedIn, isLoaded } = useSession();
 
   useEffect(() => {
