@@ -7,15 +7,15 @@ import { MobileNav } from "@/components/mobile-nav";
 import { useSession } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 
-const Layout = ({ children }: { children: React.ReactNode }) => {
-  const router = useRouter();
-  const { isSignedIn } = useSession();
+const Layout = ({ children }: { children: React.ReactNode }) => {  const router = useRouter();
+  const { isSignedIn, isLoaded } = useSession();
 
   useEffect(() => {
-    if (!isSignedIn) {
+    // Only redirect if authentication is fully loaded and user is not signed in
+    if (isLoaded && !isSignedIn) {
       router.push("/sign-in");
     }
-  }, [isSignedIn]);
+  }, [isSignedIn, isLoaded, router]);
 
   return (
     <SidebarProvider defaultOpen={false}>
