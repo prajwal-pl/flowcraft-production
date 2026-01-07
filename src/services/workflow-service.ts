@@ -44,7 +44,10 @@ async function executeNode(node: FlowNode): Promise<FlowNode> {
       case TaskType.GENERATE_AUDIO:
         const audioUrl = await generateAudio(
           inputs.text || "",
-          inputs.voice || "en-US"
+          inputs.voice || "hannah",
+          {
+            model: inputs.model || "canopylabs/orpheus-v1-english",
+          }
         );
         outputs = { audio: audioUrl };
         break;

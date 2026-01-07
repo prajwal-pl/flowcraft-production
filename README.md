@@ -51,8 +51,33 @@ NEXT_PUBLIC_GROQ_API_KEY=your_api_key_here
 #### Audio Translation
 The application also includes an `translateAudio` function that translates audio to English using Groq's Whisper models. This feature is available in the codebase for future integration.
 
-### Text-to-Speech Status
-**Text-to-speech is currently unavailable.** Groq's `playai-tts` model has been deprecated and no replacement TTS API is available. The Generate Audio node will show an error message if used, informing users that this functionality is not supported at this time.
+### Text-to-Speech with Groq Orpheus
+
+The application now supports text-to-speech using Groq's Orpheus models:
+
+- **canopylabs/orpheus-v1-english**: Expressive English TTS with vocal direction controls
+- **canopylabs/orpheus-arabic-saudi**: Authentic Saudi Arabic dialect synthesis
+
+#### Supported Voices
+- **Hannah** (English) - Clear and natural voice
+- **Troy** (English) - Professional voice
+- **Austin** (English) - Warm and friendly voice
+
+#### Vocal Directions
+Orpheus supports vocal directions to control the emotional tone of the speech:
+- Use `[cheerful]`, `[sad]`, `[excited]`, etc. in your text to add emotional expression
+
+#### Usage
+1. Add a "Generate Audio" node to your workflow
+2. Enter the text you want to convert to speech
+3. Select your preferred model (English or Arabic)
+4. Choose a voice
+5. Run the workflow to generate the audio
+
+**Example:**
+```
+Welcome to our service. [cheerful] We're excited to help you today!
+```
 
 ## Learn More
 
