@@ -14,99 +14,24 @@ if (hasGroqApiKey) {
 }
 
 /**
- * Generates audio from text using Groq's text-to-speech service
- * Note: The playai-tts model has been deprecated. This function now returns
- * a simulation mode response until a replacement TTS model is available.
+ * Text-to-speech functionality is currently unavailable
+ * The playai-tts model has been deprecated by Groq and no replacement is available.
+ * This function returns an error to inform users that TTS is not supported.
  */
 export async function generateAudio(
   text: string,
   voice: string = "en-US"
 ): Promise<string> {
-  try {
-    // Show pending toast
-    const toastId = toast.loading("Generating audio...");
+  // Show error toast immediately
+  const toastId = toast.error("Audio generation not available", {
+    description:
+      "Text-to-speech functionality is currently unavailable. Groq's playai-tts model has been deprecated with no replacement.",
+  });
 
-    let audioUrl = "";
-
-    // NOTE: The playai-tts model is deprecated and no longer works.
-    // Groq currently does not offer an alternative text-to-speech model.
-    // This function will simulate audio generation until a replacement is available.
-
-    if (hasGroqApiKey && groq) {
-      try {
-        // Map voice selection to appropriate Groq voice
-        let groqVoice = "Fritz-PlayAI"; // Default voice
-        if (voice === "en-US") groqVoice = "Fritz-PlayAI";
-        else if (voice === "en") groqVoice = "Arista-PlayAI";
-        else if (voice === "fr-FR") groqVoice = "Jennifer-PlayAI";
-
-        // Attempt to use Groq for text-to-speech (will likely fail with deprecated model)
-        const response = await groq.audio.speech.create({
-          model: "playai-tts",
-          voice: groqVoice,
-          input: text,
-          response_format: "wav",
-        });
-
-        // Convert the response to a base64 encoded data URL
-        const arrayBuffer = await response.arrayBuffer();
-        const base64 = btoa(
-          new Uint8Array(arrayBuffer).reduce(
-            (data, byte) => data + String.fromCharCode(byte),
-            ""
-          )
-        );
-
-        audioUrl = `data:audio/wav;base64,${base64}`;
-
-        // Show success toast
-        toast.success("Audio generation complete", {
-          id: toastId,
-          description: `Generated audio with ${voice} voice is now available.`,
-        });
-      } catch (apiError) {
-        console.warn(
-          "Text-to-speech model deprecated or unavailable:",
-          apiError
-        );
-
-        // Fall back to simulation
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        audioUrl = `data:audio/mp3;base64,PLACEHOLDER_AUDIO_DATA`;
-
-        toast.warning("Audio generation unavailable", {
-          id: toastId,
-          description:
-            "The text-to-speech model is deprecated. Using simulation mode.",
-        });
-      }
-    } else {
-      // Simulate processing time when no API key is available
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Create a placeholder when no API keys are available
-      audioUrl = `data:audio/mp3;base64,PLACEHOLDER_AUDIO_DATA`;
-
-      // Show simulation toast
-      toast.success("Audio generation complete (Simulation)", {
-        id: toastId,
-        description: `Generated audio with ${voice} voice is now available.`,
-      });
-    }
-
-    return audioUrl;
-  } catch (error) {
-    console.error("Error generating audio:", error);
-
-    // Show error toast
-    toast.error("Failed to generate audio", {
-      description:
-        error instanceof Error ? error.message : "Unknown error occurred",
-    });
-
-    // Provide fallback audio URL when error occurs
-    return `data:audio/mp3;base64,FALLBACK_AUDIO_DATA`;
-  }
+  // Throw error to prevent workflow from proceeding with invalid data
+  throw new Error(
+    "Text-to-speech is not available. The playai-tts model has been deprecated by Groq."
+  );
 }
 
 /**

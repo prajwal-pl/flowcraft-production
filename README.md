@@ -52,10 +52,7 @@ NEXT_PUBLIC_GROQ_API_KEY=your_api_key_here
 The application also includes an `translateAudio` function that translates audio to English using Groq's Whisper models. This feature is available in the codebase for future integration.
 
 ### Text-to-Speech Status
-The text-to-speech functionality using Groq's `playai-tts` model has been deprecated. The application gracefully handles this by:
-- Attempting to use the TTS API (will fail gracefully)
-- Falling back to simulation mode with a warning message
-- Maintaining workflow continuity
+**Text-to-speech is currently unavailable.** Groq's `playai-tts` model has been deprecated and no replacement TTS API is available. The Generate Audio node will show an error message if used, informing users that this functionality is not supported at this time.
 
 ## Learn More
 
