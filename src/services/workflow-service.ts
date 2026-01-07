@@ -44,13 +44,19 @@ async function executeNode(node: FlowNode): Promise<FlowNode> {
       case TaskType.GENERATE_AUDIO:
         const audioUrl = await generateAudio(
           inputs.text || "",
-          inputs.voice || "en-US"
+          inputs.voice || "hannah",
+          {
+            model: inputs.model || "canopylabs/orpheus-v1-english",
+          }
         );
         outputs = { audio: audioUrl };
         break;
 
       case TaskType.TRANSCRIBE_AUDIO:
-        const transcription = await transcribeAudio(inputs.file);
+        const transcription = await transcribeAudio(inputs.file, {
+          model: inputs.model || "whisper-large-v3-turbo",
+          language: inputs.language,
+        });
         outputs = { text: transcription };
         break;
 

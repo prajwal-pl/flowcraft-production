@@ -5,13 +5,20 @@ import { Handle, Position, NodeProps } from "@xyflow/react";
 import { NodeData, TaskType, FlowNode } from "@/types/nodes";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { MicIcon } from "lucide-react";
 
 export default function TranscribeAudioNode({ data }: NodeProps<FlowNode>) {
   const hasFile = data.inputs && data.inputs.file;
 
   return (
-    <div className="px-4 py-3 shadow-md rounded-md bg-white border-2 border-orange-200 dark:bg-slate-900 dark:border-orange-800 min-w-[240px]">
+    <div className="px-4 py-3 shadow-md rounded-md bg-white border-2 border-orange-200 dark:bg-slate-900 dark:border-orange-800 min-w-[280px]">
       <Handle
         type="target"
         position={Position.Top}
@@ -56,6 +63,58 @@ export default function TranscribeAudioNode({ data }: NodeProps<FlowNode>) {
                 </span>
               </div>
             )}
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="model" className="text-xs">
+              Model
+            </Label>
+            <Select
+              defaultValue={data.inputs.model || "whisper-large-v3-turbo"}
+              onValueChange={(value) => {
+                data.inputs.model = value;
+              }}
+            >
+              <SelectTrigger id="model" className="w-full h-8 text-xs">
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="whisper-large-v3-turbo">
+                  Whisper Large V3 Turbo (Fast)
+                </SelectItem>
+                <SelectItem value="whisper-large-v3">
+                  Whisper Large V3 (Accurate)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="language" className="text-xs">
+              Language (Optional)
+            </Label>
+            <Select
+              defaultValue={data.inputs.language || "en"}
+              onValueChange={(value) => {
+                data.inputs.language = value;
+              }}
+            >
+              <SelectTrigger id="language" className="w-full h-8 text-xs">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="es">Spanish</SelectItem>
+                <SelectItem value="fr">French</SelectItem>
+                <SelectItem value="de">German</SelectItem>
+                <SelectItem value="zh">Chinese</SelectItem>
+                <SelectItem value="ja">Japanese</SelectItem>
+                <SelectItem value="ko">Korean</SelectItem>
+                <SelectItem value="pt">Portuguese</SelectItem>
+                <SelectItem value="it">Italian</SelectItem>
+                <SelectItem value="ru">Russian</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Output rendering removed - now displayed in results tab */}

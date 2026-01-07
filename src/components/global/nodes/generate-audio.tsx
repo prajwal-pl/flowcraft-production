@@ -16,7 +16,7 @@ import { SparklesIcon, Music } from "lucide-react";
 
 export default function GenerateAudioNode({ data }: NodeProps<FlowNode>) {
   return (
-    <div className="px-4 py-3 shadow-md rounded-md bg-white border-2 border-blue-200 dark:bg-slate-900 dark:border-blue-800 min-w-[240px]">
+    <div className="px-4 py-3 shadow-md rounded-md bg-white border-2 border-blue-200 dark:bg-slate-900 dark:border-blue-800 min-w-[280px]">
       <Handle
         type="target"
         position={Position.Top}
@@ -41,7 +41,7 @@ export default function GenerateAudioNode({ data }: NodeProps<FlowNode>) {
             <Textarea
               id="audio-text"
               className="w-full text-xs min-h-[80px] resize-none"
-              placeholder="Enter text to convert to speech..."
+              placeholder="Enter text to convert to speech... Use [cheerful], [sad], [excited] for vocal directions."
               defaultValue={data.inputs.text || ""}
               onChange={(e) => {
                 data.inputs.text = e.target.value;
@@ -50,11 +50,35 @@ export default function GenerateAudioNode({ data }: NodeProps<FlowNode>) {
           </div>
 
           <div className="space-y-1">
+            <Label htmlFor="model-type" className="text-xs">
+              Model
+            </Label>
+            <Select
+              defaultValue={data.inputs.model || "canopylabs/orpheus-v1-english"}
+              onValueChange={(value) => {
+                data.inputs.model = value;
+              }}
+            >
+              <SelectTrigger id="model-type" className="w-full h-8 text-xs">
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="canopylabs/orpheus-v1-english">
+                  Orpheus English
+                </SelectItem>
+                <SelectItem value="canopylabs/orpheus-arabic-saudi">
+                  Orpheus Arabic (Saudi)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
             <Label htmlFor="voice-type" className="text-xs">
               Voice
             </Label>
             <Select
-              defaultValue={data.inputs.voice || "en-US"}
+              defaultValue={data.inputs.voice || "hannah"}
               onValueChange={(value) => {
                 data.inputs.voice = value;
               }}
@@ -63,9 +87,9 @@ export default function GenerateAudioNode({ data }: NodeProps<FlowNode>) {
                 <SelectValue placeholder="Select voice" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="en-US">Fritz</SelectItem>
-                <SelectItem value="es-ES">Angelo</SelectItem>
-                <SelectItem value="fr-FR">Jennifer</SelectItem>
+                <SelectItem value="hannah">Hannah (English)</SelectItem>
+                <SelectItem value="troy">Troy (English)</SelectItem>
+                <SelectItem value="austin">Austin (English)</SelectItem>
               </SelectContent>
             </Select>
           </div>
