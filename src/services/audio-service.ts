@@ -137,10 +137,20 @@ export async function transcribeAudio(
 
     if (hasGroqApiKey && groq) {
       try {
+        // Validate that we have either a file or URL
+        const hasFile = file instanceof File;
+        const hasUrl = typeof file === "string" && file.length > 0;
+
+        if (!hasFile && !hasUrl) {
+          throw new Error(
+            "Invalid input: file must be a File object or a non-empty URL string"
+          );
+        }
+
         // Use Groq's Whisper API for actual transcription
         const transcription = await groq.audio.transcriptions.create({
-          file: file instanceof File ? file : undefined,
-          url: typeof file === "string" ? file : undefined,
+          file: hasFile ? (file as File) : undefined,
+          url: hasUrl ? (file as string) : undefined,
           model:
             (options?.model as "whisper-large-v3" | "whisper-large-v3-turbo") ||
             "whisper-large-v3-turbo",
@@ -225,10 +235,20 @@ export async function translateAudio(
 
     if (hasGroqApiKey && groq) {
       try {
+        // Validate that we have either a file or URL
+        const hasFile = file instanceof File;
+        const hasUrl = typeof file === "string" && file.length > 0;
+
+        if (!hasFile && !hasUrl) {
+          throw new Error(
+            "Invalid input: file must be a File object or a non-empty URL string"
+          );
+        }
+
         // Use Groq's Whisper API for actual translation
         const translation = await groq.audio.translations.create({
-          file: file instanceof File ? file : undefined,
-          url: typeof file === "string" ? file : undefined,
+          file: hasFile ? (file as File) : undefined,
+          url: hasUrl ? (file as string) : undefined,
           model: (options?.model as "whisper-large-v3") || "whisper-large-v3",
           prompt: options?.prompt,
           temperature: options?.temperature ?? 0.0,

@@ -17,14 +17,6 @@ import { MicIcon } from "lucide-react";
 export default function TranscribeAudioNode({ data }: NodeProps<FlowNode>) {
   const hasFile = data.inputs && data.inputs.file;
 
-  // Initialize default values if not set
-  if (!data.inputs.model) {
-    data.inputs.model = "whisper-large-v3-turbo";
-  }
-  if (!data.inputs.language) {
-    data.inputs.language = "en";
-  }
-
   return (
     <div className="px-4 py-3 shadow-md rounded-md bg-white border-2 border-orange-200 dark:bg-slate-900 dark:border-orange-800 min-w-[280px]">
       <Handle
