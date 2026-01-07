@@ -15,6 +15,8 @@ if (hasGroqApiKey) {
 
 /**
  * Generates audio from text using Groq's text-to-speech service
+ * Note: The playai-tts model has been deprecated. This function now returns
+ * a simulation mode response until a replacement TTS model is available.
  */
 export async function generateAudio(
   text: string,
@@ -26,37 +28,58 @@ export async function generateAudio(
 
     let audioUrl = "";
 
-    // Map voice selection to appropriate Groq voice
-    let groqVoice = "Fritz-PlayAI"; // Default voice
-    if (voice === "en-US") groqVoice = "Fritz-PlayAI";
-    else if (voice === "en") groqVoice = "Arista-PlayAI";
-    else if (voice === "fr-FR") groqVoice = "Jennifer-PlayAI";
+    // NOTE: The playai-tts model is deprecated and no longer works.
+    // Groq currently does not offer an alternative text-to-speech model.
+    // This function will simulate audio generation until a replacement is available.
 
     if (hasGroqApiKey && groq) {
-      // Use Groq for text-to-speech
-      const response = await groq.audio.speech.create({
-        model: "playai-tts",
-        voice: groqVoice,
-        input: text,
-        response_format: "wav",
-      });
+      try {
+        // Map voice selection to appropriate Groq voice
+        let groqVoice = "Fritz-PlayAI"; // Default voice
+        if (voice === "en-US") groqVoice = "Fritz-PlayAI";
+        else if (voice === "en") groqVoice = "Arista-PlayAI";
+        else if (voice === "fr-FR") groqVoice = "Jennifer-PlayAI";
 
-      // Convert the response to a base64 encoded data URL
-      const arrayBuffer = await response.arrayBuffer();
-      const base64 = btoa(
-        new Uint8Array(arrayBuffer).reduce(
-          (data, byte) => data + String.fromCharCode(byte),
-          ""
-        )
-      );
+        // Attempt to use Groq for text-to-speech (will likely fail with deprecated model)
+        const response = await groq.audio.speech.create({
+          model: "playai-tts",
+          voice: groqVoice,
+          input: text,
+          response_format: "wav",
+        });
 
-      audioUrl = `data:audio/wav;base64,${base64}`;
+        // Convert the response to a base64 encoded data URL
+        const arrayBuffer = await response.arrayBuffer();
+        const base64 = btoa(
+          new Uint8Array(arrayBuffer).reduce(
+            (data, byte) => data + String.fromCharCode(byte),
+            ""
+          )
+        );
 
-      // Show success toast
-      toast.success("Audio generation complete", {
-        id: toastId,
-        description: `Generated audio with ${voice} voice is now available.`,
-      });
+        audioUrl = `data:audio/wav;base64,${base64}`;
+
+        // Show success toast
+        toast.success("Audio generation complete", {
+          id: toastId,
+          description: `Generated audio with ${voice} voice is now available.`,
+        });
+      } catch (apiError) {
+        console.warn(
+          "Text-to-speech model deprecated or unavailable:",
+          apiError
+        );
+
+        // Fall back to simulation
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        audioUrl = `data:audio/mp3;base64,PLACEHOLDER_AUDIO_DATA`;
+
+        toast.warning("Audio generation unavailable", {
+          id: toastId,
+          description:
+            "The text-to-speech model is deprecated. Using simulation mode.",
+        });
+      }
     } else {
       // Simulate processing time when no API key is available
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -87,70 +110,79 @@ export async function generateAudio(
 }
 
 /**
- * Simulates audio transcription
- * In a real implementation, we would use an actual speech-to-text service
+ * Transcribes audio to text using Groq's Whisper models
  */
-export async function transcribeAudio(file: File | string): Promise<string> {
+export async function transcribeAudio(
+  file: File | string,
+  options?: {
+    model?: "whisper-large-v3" | "whisper-large-v3-turbo";
+    language?: string;
+    prompt?: string;
+    temperature?: number;
+    responseFormat?: "json" | "text" | "verbose_json";
+    timestampGranularities?: Array<"word" | "segment">;
+  }
+): Promise<string> {
   try {
     // Show pending toast
     const toastId = toast.loading("Transcribing audio...");
 
-    // Get filename for better simulation
+    // Get filename for better simulation/fallback
     const fileName =
       typeof file === "string"
         ? file.split("/").pop() || "audio.mp3"
         : file.name || "audio.mp3";
 
-    // Simulate processing time
-    await new Promise((resolve) => setTimeout(resolve, 2500));
-
     let transcriptionText = "";
 
     if (hasGroqApiKey && groq) {
-      // Generate a simulated transcription using Groq
-      const transcription = await groq.chat.completions.create({
-        messages: [
-          {
-            role: "user",
-            content: `Generate a sample transcription for an audio file named "${fileName}" that might be about technology or science. Make it about 3-4 sentences.`,
-          },
-        ],
-        model: "llama3-8b-8192",
-        max_tokens: 200,
-      });
+      try {
+        // Use Groq's Whisper API for actual transcription
+        const transcription = await groq.audio.transcriptions.create({
+          file: file instanceof File ? file : undefined,
+          url: typeof file === "string" ? file : undefined,
+          model:
+            (options?.model as "whisper-large-v3" | "whisper-large-v3-turbo") ||
+            "whisper-large-v3-turbo",
+          language: options?.language,
+          prompt: options?.prompt,
+          temperature: options?.temperature ?? 0.0,
+          response_format: options?.responseFormat || "json",
+          timestamp_granularities: options?.timestampGranularities,
+        });
 
-      transcriptionText =
-        transcription.choices[0]?.message?.content ||
-        "This is a simulated transcription of the audio file. In a real implementation, this would be the actual text content from the audio.";
-    } else {
-      // Generate simulated transcription based on filename
-      if (fileName.toLowerCase().includes("interview")) {
-        transcriptionText =
-          "Interviewer: Thank you for joining us today. Can you tell us about your research?\n\nGuest: Certainly. Our team has been studying quantum computing applications in healthcare for the past three years. We've made significant progress in optimizing algorithms for protein folding simulations. The results suggest we could accelerate drug discovery by up to 40% compared to traditional computing methods.";
-      } else if (
-        fileName.toLowerCase().includes("lecture") ||
-        fileName.toLowerCase().includes("lesson")
-      ) {
-        transcriptionText =
-          "Today we'll be covering the fundamental principles of machine learning. As we discussed last week, supervised learning relies on labeled data sets. The algorithm learns to recognize patterns and makes predictions based on the training examples. Remember that the quality of your training data directly impacts the performance of your model.";
-      } else if (fileName.toLowerCase().includes("podcast")) {
-        transcriptionText =
-          "Welcome to Tech Horizons podcast. In today's episode, we're exploring the ethical implications of artificial intelligence in surveillance systems. Our guest expert will share insights on balancing security needs with privacy concerns. Stay tuned for this important conversation about technology's role in modern society.";
-      } else {
-        transcriptionText = `This is a simulated transcription of the audio file "${fileName}". The audio appears to contain a discussion about technology and its impacts on society. Several speakers exchange views on innovation, privacy concerns, and regulatory frameworks. This is a simulation since no actual audio content is being processed.`;
+        transcriptionText = transcription.text;
+
+        // Show success toast
+        toast.success("Audio transcription complete", {
+          id: toastId,
+          description: "Transcribed text is now available in the workflow.",
+        });
+      } catch (apiError) {
+        console.error("Groq API error during transcription:", apiError);
+
+        // Show warning and fall back to simulation
+        toast.warning("API transcription failed, using simulation", {
+          id: toastId,
+          description: "Falling back to simulated transcription.",
+        });
+
+        // Generate fallback transcription
+        transcriptionText = generateFallbackTranscription(fileName);
       }
-    }
+    } else {
+      // Simulate processing time when no API key is available
+      await new Promise((resolve) => setTimeout(resolve, 2500));
 
-    // Show success toast
-    toast.success(
-      hasGroqApiKey
-        ? "Audio transcription complete"
-        : "Audio transcription complete (Simulation)",
-      {
+      // Generate simulated transcription
+      transcriptionText = generateFallbackTranscription(fileName);
+
+      // Show simulation toast
+      toast.success("Audio transcription complete (Simulation)", {
         id: toastId,
         description: "Transcribed text is now available in the workflow.",
-      }
-    );
+      });
+    }
 
     return transcriptionText;
   } catch (error) {
@@ -164,5 +196,107 @@ export async function transcribeAudio(file: File | string): Promise<string> {
 
     // Provide fallback transcription when error occurs
     return "An error occurred while transcribing the audio. This is a fallback transcription to allow the workflow to continue.";
+  }
+}
+
+/**
+ * Translates audio to English text using Groq's Whisper models
+ */
+export async function translateAudio(
+  file: File | string,
+  options?: {
+    model?: "whisper-large-v3";
+    prompt?: string;
+    temperature?: number;
+    responseFormat?: "json" | "text" | "verbose_json";
+  }
+): Promise<string> {
+  try {
+    // Show pending toast
+    const toastId = toast.loading("Translating audio...");
+
+    // Get filename for better simulation/fallback
+    const fileName =
+      typeof file === "string"
+        ? file.split("/").pop() || "audio.mp3"
+        : file.name || "audio.mp3";
+
+    let translationText = "";
+
+    if (hasGroqApiKey && groq) {
+      try {
+        // Use Groq's Whisper API for actual translation
+        const translation = await groq.audio.translations.create({
+          file: file instanceof File ? file : undefined,
+          url: typeof file === "string" ? file : undefined,
+          model: (options?.model as "whisper-large-v3") || "whisper-large-v3",
+          prompt: options?.prompt,
+          temperature: options?.temperature ?? 0.0,
+          response_format: options?.responseFormat || "json",
+        });
+
+        translationText = translation.text;
+
+        // Show success toast
+        toast.success("Audio translation complete", {
+          id: toastId,
+          description: "Translated text is now available in the workflow.",
+        });
+      } catch (apiError) {
+        console.error("Groq API error during translation:", apiError);
+
+        // Show warning and fall back to simulation
+        toast.warning("API translation failed, using simulation", {
+          id: toastId,
+          description: "Falling back to simulated translation.",
+        });
+
+        // Generate fallback translation
+        translationText = `Translated to English: ${generateFallbackTranscription(fileName)}`;
+      }
+    } else {
+      // Simulate processing time when no API key is available
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+
+      // Generate simulated translation
+      translationText = `Translated to English: ${generateFallbackTranscription(fileName)}`;
+
+      // Show simulation toast
+      toast.success("Audio translation complete (Simulation)", {
+        id: toastId,
+        description: "Translated text is now available in the workflow.",
+      });
+    }
+
+    return translationText;
+  } catch (error) {
+    console.error("Error translating audio:", error);
+
+    // Show error toast
+    toast.error("Failed to translate audio", {
+      description:
+        error instanceof Error ? error.message : "Unknown error occurred",
+    });
+
+    // Provide fallback translation when error occurs
+    return "An error occurred while translating the audio. This is a fallback translation to allow the workflow to continue.";
+  }
+}
+
+/**
+ * Helper function to generate fallback transcription for simulation mode
+ */
+function generateFallbackTranscription(fileName: string): string {
+  if (fileName.toLowerCase().includes("interview")) {
+    return "Interviewer: Thank you for joining us today. Can you tell us about your research?\n\nGuest: Certainly. Our team has been studying quantum computing applications in healthcare for the past three years. We've made significant progress in optimizing algorithms for protein folding simulations. The results suggest we could accelerate drug discovery by up to 40% compared to traditional computing methods.";
+  } else if (
+    fileName.toLowerCase().includes("lecture") ||
+    fileName.toLowerCase().includes("lesson")
+  ) {
+    return "Today we'll be covering the fundamental principles of machine learning. As we discussed last week, supervised learning relies on labeled data sets. The algorithm learns to recognize patterns and makes predictions based on the training examples. Remember that the quality of your training data directly impacts the performance of your model.";
+  } else if (fileName.toLowerCase().includes("podcast")) {
+    return "Welcome to Tech Horizons podcast. In today's episode, we're exploring the ethical implications of artificial intelligence in surveillance systems. Our guest expert will share insights on balancing security needs with privacy concerns. Stay tuned for this important conversation about technology's role in modern society.";
+  } else {
+    return `This is a simulated transcription of the audio file "${fileName}". The audio appears to contain a discussion about technology and its impacts on society. Several speakers exchange views on innovation, privacy concerns, and regulatory frameworks. This is a simulation since no actual audio content is being processed.`;
   }
 }
